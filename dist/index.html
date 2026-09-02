@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Drive Mad</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
+    *  { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    html,body { width:100%; height:100%; overflow:hidden; background:#1a1a2e;
+                font-family:'Nunito',sans-serif; touch-action:none; }
+
+    #game-canvas { display:block; width:100%; height:100%; touch-action:none; }
+
+    /* ── Screens ─────────────────────────── */
+    .screen { position:fixed; inset:0; display:flex; flex-direction:column;
+              align-items:center; justify-content:center; z-index:100;
+              transition:opacity .3s ease; }
+    .screen.hidden { opacity:0; pointer-events:none; }
+
+    /* Menu */
+    #screen-menu { background:linear-gradient(160deg,#0f0c29,#302b63,#24243e);
+                   overflow-y:auto; -webkit-overflow-scrolling:touch; padding:30px 10px 40px; }
+    .logo        { font-size:clamp(36px,8vw,72px); font-weight:900; color:#fff;
+                   letter-spacing:-2px; text-shadow:0 0 30px rgba(100,180,255,.6); }
+    .logo span   { color:#ff6b35; }
+    .subtitle    { font-size:clamp(11px,1.8vw,14px); color:rgba(255,255,255,.45);
+                   letter-spacing:4px; text-transform:uppercase; margin-top:2px; }
+    #level-select { margin-top:22px; display:grid; grid-template-columns:repeat(5,1fr);
+                    gap:8px; width:100%; max-width:min(580px,92vw); max-height:56vh;
+                    overflow-y:auto; padding:6px; }
+    #level-select::-webkit-scrollbar { width:6px; }
+    #level-select::-webkit-scrollbar-thumb { background:rgba(255,255,255,.2); border-radius:10px; }
+    @media(max-width:480px){
+      #level-select{ grid-template-columns:repeat(5,1fr); gap:5px; max-height:58vh; }
+    }
+    .lvl-btn { background:rgba(255,255,255,.07); border:2px solid rgba(255,255,255,.12);
+               border-radius:12px; padding:8px 0 6px; cursor:pointer; transition:all .18s;
+               display:flex; flex-direction:column; align-items:center; gap:2px; color:#fff; }
+    .lvl-btn:hover { background:rgba(255,107,53,.28); border-color:#ff6b35; transform:translateY(-2px); }
+    .lvl-btn .num  { font-size:clamp(15px,3.2vw,20px); font-weight:900; }
+    .lvl-btn .stars{ font-size:8px; color:#ffd700; letter-spacing:-1px; }
+    .lvl-btn.locked   { opacity:.25; cursor:not-allowed; pointer-events:none; }
+    .lvl-btn.completed .num { color:#4cde80; }
+    .play-hint { margin-top:14px; font-size:11px; color:rgba(255,255,255,.3);
+                 letter-spacing:1px; text-align:center; padding:0 20px; }
+
+    /* HUD */
+    #hud { position:fixed; top:0; left:0; right:0; display:flex;
+           justify-content:space-between; align-items:center;
+           padding:max(env(safe-area-inset-top),10px) 12px 10px; pointer-events:none; z-index:50; }
+    .hud-pill { background:rgba(0,0,0,.4); backdrop-filter:blur(10px); border-radius:100px;
+                padding:7px 15px; color:#fff; font-size:13px; font-weight:700;
+                display:flex; align-items:center; gap:6px; pointer-events:auto; }
+    #btn-restart-hud { cursor:pointer; background:rgba(255,107,53,.8); }
+    #btn-restart-hud:hover { background:#ff6b35; }
+    #btn-menu-hud { cursor:pointer; }
+    #btn-menu-hud:hover { background:rgba(255,255,255,.18); }
+
+    /* Progress bar */
+    #progress-bar-wrap { position:fixed; top:52px; left:50%; transform:translateX(-50%);
+                         width:min(280px,65vw); height:7px; background:rgba(0,0,0,.3);
+                         border-radius:100px; z-index:50; overflow:hidden; }
+    #progress-bar-fill { height:100%; background:linear-gradient(90deg,#ff6b35,#ffd700);
+                         border-radius:100px; width:0%; transition:width .08s; }
+
+    /* Overlay screens */
+    .modal-overlay { position:fixed; inset:0; display:flex; flex-direction:column;
+                     align-items:center; justify-content:center; z-index:80; pointer-events:none; }
+    .modal-overlay.active { pointer-events:auto; }
+    #screen-crash { background:rgba(200,20,20,.55); backdrop-filter:blur(10px); }
+    #screen-win   { background:rgba(10,160,100,.5);  backdrop-filter:blur(10px); }
+    .overlay-emoji { font-size:clamp(52px,11vw,96px); }
+    .overlay-title { font-size:clamp(28px,7vw,58px); font-weight:900; color:#fff;
+                     margin-top:8px; text-shadow:0 2px 12px rgba(0,0,0,.35); }
+    .overlay-sub   { font-size:clamp(12px,2.5vw,18px); color:rgba(255,255,255,.8); margin-top:6px; }
+    .overlay-btns  { display:flex; gap:14px; margin-top:26px; pointer-events:auto; flex-wrap:wrap; justify-content:center; }
+    .btn-big { padding:13px 30px; border-radius:50px; font-size:clamp(14px,2.5vw,18px);
+               font-weight:800; cursor:pointer; border:none; transition:all .15s; color:#fff; font-family:'Nunito',sans-serif; }
+    .btn-big:hover { transform:scale(1.07); }
+    .btn-primary   { background:#ff6b35; }
+    .btn-secondary { background:rgba(255,255,255,.18); border:2px solid rgba(255,255,255,.4); }
+
+    /* On-screen controls (Left = Backward/Lean, Right = Forward/Drive) */
+    #on-screen-controls { position:fixed; bottom:0; left:0; right:0;
+                          display:none; justify-content:space-between; align-items:flex-end;
+                          padding:0 24px max(env(safe-area-inset-bottom),24px);
+                          z-index:50; pointer-events:none; }
+    .ctrl-side { display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:auto; }
+    .ctrl-btn { width:clamp(76px,18vw,96px); height:clamp(76px,18vw,96px);
+                border-radius:24px; background:rgba(15,23,42,.65); backdrop-filter:blur(14px);
+                border:2px solid rgba(255,255,255,.2); font-size:clamp(28px,7vw,38px);
+                display:flex; justify-content:center; align-items:center;
+                user-select:none; touch-action:none; cursor:pointer;
+                transition:all .1s cubic-bezier(0.4, 0, 0.2, 1); color:#fff;
+                box-shadow:0 8px 24px rgba(0,0,0,.3); }
+    .ctrl-btn:hover { border-color:rgba(255,255,255,.4); }
+    .ctrl-btn:active,.ctrl-btn.pressed { background:rgba(255,107,53,.8); border-color:#ff6b35;
+                                        transform:scale(.92); box-shadow:0 0 20px rgba(255,107,53,.6); }
+    .ctrl-btn-fwd { background:rgba(255,107,53,.35); border-color:rgba(255,107,53,.6); }
+    .ctrl-lbl { font-size:11px; font-weight:800; color:rgba(255,255,255,.4); letter-spacing:2px;
+                text-transform:uppercase; pointer-events:none; }
+  </style>
+</head>
+<body>
+
+<!-- MENU SCREEN -->
+<div id="screen-menu" class="screen">
+  <div class="logo">Drive<span>Mad</span></div>
+  <div class="subtitle">Physics Racing</div>
+  <div id="level-select"></div>
+  <div class="play-hint">Tap a level · Arrow Keys or On-Screen Buttons to drive</div>
+</div>
+
+<!-- CRASH SCREEN -->
+<div id="screen-crash" class="modal-overlay">
+  <div class="overlay-emoji">💥</div>
+  <div class="overlay-title">You Crashed!</div>
+  <div class="overlay-sub">Don't let your head touch the ground!</div>
+  <div class="overlay-btns">
+    <button class="btn-big btn-primary" id="btn-crash-retry">Try Again</button>
+    <button class="btn-big btn-secondary" id="btn-crash-menu">Menu</button>
+  </div>
+</div>
+
+<!-- WIN SCREEN -->
+<div id="screen-win" class="modal-overlay">
+  <div class="overlay-emoji">🏆</div>
+  <div class="overlay-title">Level Complete!</div>
+  <div class="overlay-sub" id="win-time-text">Time: 0.00s</div>
+  <div class="overlay-btns">
+    <button class="btn-big btn-primary" id="btn-win-next">Next Level ›</button>
+    <button class="btn-big btn-secondary" id="btn-win-menu">Menu</button>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud" style="display:none">
+  <div class="hud-pill">🎮 <span id="hud-level-name">Level 1</span></div>
+  <div class="hud-pill">⏱ <span id="hud-timer">0.00s</span></div>
+  <div class="hud-pill" id="btn-restart-hud" onclick="game.restartLevel()">🔄 Restart</div>
+  <div class="hud-pill" id="btn-menu-hud"    onclick="game.goToMenu()">🏠 Menu</div>
+</div>
+<div id="progress-bar-wrap" style="display:none"><div id="progress-bar-fill"></div></div>
+
+<!-- On-Screen Controls (Left = Backward, Right = Forward) -->
+<div id="on-screen-controls">
+  <!-- LEFT SIDE: Backward / Lean Back -->
+  <div class="ctrl-side">
+    <div class="ctrl-btn" id="ctrl-left"
+         onpointerdown="game._ctrlPress('left')"
+         onpointerup="game._ctrlRelease('left')"
+         onpointerleave="game._ctrlRelease('left')"
+         onpointercancel="game._ctrlRelease('left')">◀</div>
+    <div class="ctrl-lbl">BACKWARD</div>
+  </div>
+
+  <!-- RIGHT SIDE: Forward / Drive -->
+  <div class="ctrl-side">
+    <div class="ctrl-btn ctrl-btn-fwd" id="ctrl-right"
+         onpointerdown="game._ctrlPress('right')"
+         onpointerup="game._ctrlRelease('right')"
+         onpointerleave="game._ctrlRelease('right')"
+         onpointercancel="game._ctrlRelease('right')">▶</div>
+    <div class="ctrl-lbl">FORWARD</div>
+  </div>
+</div>
+
+<canvas id="game-canvas"></canvas>
+
+<script src="levels.js"></script>
+<script src="physics.js"></script>
+<script src="game.js"></script>
+
+<script>
+  // Prevent all touch defaults to stop scroll/zoom during gameplay
+  document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+  document.addEventListener('touchstart', e => {
+    if (e.target.closest('#on-screen-controls, #hud')) return;
+    if (window.game && window.game.state === 'PLAYING') e.preventDefault();
+  }, { passive: false });
+</script>
+</body>
+</html>
