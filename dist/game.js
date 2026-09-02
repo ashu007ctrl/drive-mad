@@ -35,10 +35,16 @@ class DriveMadGame {
     // Progress in LocalStorage
     this.progress = JSON.parse(localStorage.getItem('drivemad_progress_v2') || '{}');
 
+    // Audio System
+    this._musicStarted = false;
+    this._musicMuted = localStorage.getItem('drivemad_muted') === 'true';
+    this._initAudio();
+
     this._initClouds();
     this._resize();
     this._bindInput();
     this._buildMenu();
+    this._createMuteButton();
 
     window.addEventListener('resize', () => this._resize());
 
@@ -67,6 +73,17 @@ class DriveMadGame {
   }
 
   _bindInput() {
+    // Start music on first user interaction (browser policy requires user gesture)
+    const startMusicOnce = () => {
+      if (!this._musicStarted) {
+        this._musicStarted = true;
+        this._startMusic();
+      }
+    };
+    ['click', 'touchstart', 'keydown', 'pointerdown'].forEach(evt => {
+      window.addEventListener(evt, startMusicOnce, { once: false });
+    });
+
     window.addEventListener('keydown', e => {
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         this.keys.right = true;
@@ -78,10 +95,22 @@ class DriveMadGame {
         this.keys.backward = true;
         document.getElementById('ctrl-left')?.classList.add('pressed');
       }
-      if ((e.key === 'r' || e.key === 'R') && (this.state === 'PLAYING' || this.state === 'CRASHED')) {
+      if ((e.key === 'r' || e.key === 'R') && (this.state === 'PLAYING' || this.state === 'CRASHED' || this.state === 'PAUSED')) {
         this.restartLevel();
       }
-      if (e.key === 'Escape') this.goToMenu();
+      if (e.key === 'p' || e.key === 'P') {
+        if (this.state === 'PLAYING' || this.state === 'PAUSED') {
+          this.togglePause();
+        }
+      }
+      if (e.key === 'Escape') {
+        if (this.state === 'PLAYING' || this.state === 'PAUSED') {
+          this.togglePause();
+        } else {
+          this.goToMenu();
+        }
+      }
+      if (e.key === 'm' || e.key === 'M') this.toggleMute();
     });
 
     window.addEventListener('keyup', e => {
@@ -175,6 +204,8 @@ class DriveMadGame {
     document.getElementById('progress-bar-wrap').style.display = 'block';
     document.getElementById('on-screen-controls').style.display = 'flex';
     document.getElementById('hud-level-name').textContent = lvl.name || `Level ${index + 1}`;
+    const pauseBtn = document.getElementById('btn-pause-hud');
+    if (pauseBtn) pauseBtn.textContent = '⏸ Pause';
 
     this.physics = new PhysicsWorld(CAR_CONFIG);
     this.physics.loadLevel(lvl);
@@ -208,8 +239,9 @@ class DriveMadGame {
   }
 
   _setScreen(id) {
-    ['screen-menu', 'screen-crash', 'screen-win'].forEach(s => {
+    ['screen-menu', 'screen-crash', 'screen-win', 'screen-pause'].forEach(s => {
       const el = document.getElementById(s);
+      if (!el) return;
       if (s === id) {
         el.classList.add('active');
         el.classList.remove('hidden');
@@ -222,11 +254,37 @@ class DriveMadGame {
     });
   }
 
+  togglePause() {
+    if (this.state === 'PLAYING') {
+      this.state = 'PAUSED';
+      this._pauseStartTime = performance.now();
+      this._releaseAll();
+      document.getElementById('on-screen-controls').style.display = 'none';
+      const pauseBtn = document.getElementById('btn-pause-hud');
+      if (pauseBtn) pauseBtn.textContent = '▶ Resume';
+      this._setScreen('screen-pause');
+    } else if (this.state === 'PAUSED') {
+      this.state = 'PLAYING';
+      const pausedDuration = performance.now() - (this._pauseStartTime || performance.now());
+      this.startTime += pausedDuration;
+      this._lastTime = performance.now();
+      document.getElementById('on-screen-controls').style.display = 'flex';
+      const pauseBtn = document.getElementById('btn-pause-hud');
+      if (pauseBtn) pauseBtn.textContent = '⏸ Pause';
+      this._setScreen(null);
+    }
+  }
+
   _loop(ts) {
     const dt = Math.min((ts - this._lastTime) / 1000, 0.04);
     this._lastTime = ts;
 
     requestAnimationFrame(t => this._loop(t));
+
+    if (this.state === 'PAUSED') {
+      this._draw();
+      return;
+    }
 
     this.flagWave += dt * 5;
 
@@ -744,8 +802,30 @@ class DriveMadGame {
   }
 
   _drawFinish(ctx, toScreen, finishX, PPU) {
-    const base = toScreen(finishX, 2);
-    const top = toScreen(finishX, 6.5);
+    // Find the ground Y at the finish position by checking segments
+    let groundY = 2; // fallback
+    if (this.currentLevel && this.currentLevel.segments) {
+      for (const seg of this.currentLevel.segments) {
+        if (seg.type === 'gap' || seg.type === 'see-saw' || seg.type === 'box' || seg.type === 'moving') continue;
+        const segEnd = seg.x + (seg.w || 0);
+        if (finishX >= seg.x && finishX <= segEnd) {
+          if (seg.type === 'flat') {
+            groundY = seg.y;
+          } else if (seg.type === 'ramp') {
+            const t = (finishX - seg.x) / seg.w;
+            groundY = seg.y + seg.rise * t;
+          } else if (seg.type === 'bridge') {
+            const t = (finishX - seg.x) / seg.w;
+            const dip = Math.sin(t * Math.PI) * (seg.sag || 1.5);
+            groundY = seg.y - dip;
+          }
+          break;
+        }
+      }
+    }
+
+    const base = toScreen(finishX, groundY);
+    const top = toScreen(finishX, groundY + 4.5);
 
     // Flagpole
     ctx.strokeStyle = '#fff';
@@ -927,6 +1007,247 @@ class DriveMadGame {
     ctx.lineTo(x, y + r);
     ctx.arcTo(x, y, x + r, y, r);
     ctx.closePath();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  AUDIO SYSTEM — Procedural Background Music (Web Audio API)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  _initAudio() {
+    this._audioCtx = null;
+    this._masterGain = null;
+    this._musicPlaying = false;
+  }
+
+  _startMusic() {
+    if (this._musicPlaying) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this._audioCtx = new AC();
+      const ctx = this._audioCtx;
+
+      // Master gain
+      this._masterGain = ctx.createGain();
+      this._masterGain.gain.value = this._musicMuted ? 0 : 0.35;
+      this._masterGain.connect(ctx.destination);
+
+      // Compressor for cleaner mix
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = -20;
+      compressor.knee.value = 10;
+      compressor.ratio.value = 4;
+      compressor.connect(this._masterGain);
+
+      this._compressor = compressor;
+      this._musicPlaying = true;
+
+      // Start the melody loop
+      this._scheduleMusicLoop();
+    } catch (e) {
+      console.warn('Audio init failed:', e);
+    }
+  }
+
+  _scheduleMusicLoop() {
+    if (!this._audioCtx || !this._musicPlaying) return;
+    const ctx = this._audioCtx;
+    const dest = this._compressor;
+
+    // Tempo and note duration
+    const BPM = 140;
+    const beatDur = 60 / BPM;
+    const barDur = beatDur * 4;
+
+    // Cheerful melody scale (C major pentatonic + extras for variety)
+    const noteFreqs = {
+      'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00,
+      'A3': 220.00, 'B3': 246.94,
+      'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00,
+      'A4': 440.00, 'B4': 493.88,
+      'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'G5': 783.99,
+    };
+
+    // Fun upbeat melody pattern (4 bars loop) — Hill Climb Racing style
+    const melodyPatterns = [
+      // Pattern A - bouncy ascending
+      ['C4','E4','G4','C5', 'B4','G4','E4','G4', 'A4','C5','E5','C5', 'G4','E4','D4','E4'],
+      // Pattern B - playful descending
+      ['E5','D5','C5','G4', 'A4','G4','E4','D4', 'C4','E4','G4','A4', 'G4','E4','C4','E4'],
+      // Pattern C - rhythmic bounce
+      ['G4','G4','A4','B4', 'C5','C5','B4','A4', 'G4','A4','G4','E4', 'D4','E4','G4','G4'],
+      // Pattern D - triumphant
+      ['C5','E5','D5','C5', 'G4','A4','G4','E4', 'C4','D4','E4','G4', 'A4','G4','E4','C4'],
+    ];
+
+    // Bass pattern (root notes, whole notes)
+    const bassPatterns = [
+      ['C3','C3','F3','G3'],
+      ['A3','A3','F3','G3'],
+      ['C3','E3','F3','G3'],
+      ['C3','G3','F3','E3'],
+    ];
+
+    // Drum pattern per bar: [kick/snare timings within 4 beats]
+    // Each entry: [timeInBeats, type] where type = 'kick' | 'snare' | 'hat'
+    const drumPattern = [
+      [0, 'kick'], [0.5, 'hat'], [1, 'snare'], [1.5, 'hat'],
+      [2, 'kick'], [2.5, 'hat'], [3, 'snare'], [3.5, 'hat'],
+    ];
+
+    const totalBars = melodyPatterns.length * 4; // repeat each pattern
+    const loopDuration = totalBars * barDur;
+    const now = ctx.currentTime + 0.1;
+
+    // Schedule melody, bass, and drums
+    for (let bar = 0; bar < totalBars; bar++) {
+      const patIdx = Math.floor(bar / 4) % melodyPatterns.length;
+      const melody = melodyPatterns[patIdx];
+      const bass = bassPatterns[patIdx];
+      const barStart = now + bar * barDur;
+
+      // Melody notes (16th notes per bar = 4 per beat)
+      const noteDur = barDur / melody.length;
+      melody.forEach((note, i) => {
+        if (!noteFreqs[note]) return;
+        this._playNote(ctx, dest, noteFreqs[note], barStart + i * noteDur, noteDur * 0.85, 'square', 0.08);
+      });
+
+      // Bass (whole notes per beat)
+      bass.forEach((note, i) => {
+        if (!noteFreqs[note]) return;
+        this._playNote(ctx, dest, noteFreqs[note], barStart + i * beatDur, beatDur * 0.9, 'triangle', 0.12);
+      });
+
+      // Drums
+      drumPattern.forEach(([beatOffset, type]) => {
+        const t = barStart + beatOffset * beatDur;
+        this._playDrum(ctx, dest, type, t);
+      });
+    }
+
+    // Re-schedule when current loop is about to end
+    const nextLoopTime = (loopDuration - 0.5) * 1000;
+    this._musicTimeout = setTimeout(() => {
+      if (this._musicPlaying) this._scheduleMusicLoop();
+    }, Math.max(100, nextLoopTime));
+  }
+
+  _playNote(ctx, dest, freq, startTime, duration, waveType, volume) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = waveType;
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    // Envelope: quick attack, sustain, release
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
+    gain.gain.setValueAtTime(volume, startTime + duration * 0.7);
+    gain.gain.linearRampToValueAtTime(0, startTime + duration);
+
+    osc.connect(gain);
+    gain.connect(dest);
+
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
+  }
+
+  _playDrum(ctx, dest, type, time) {
+    if (type === 'kick') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, time);
+      osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
+      gain.gain.setValueAtTime(0.2, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+      osc.connect(gain);
+      gain.connect(dest);
+      osc.start(time);
+      osc.stop(time + 0.2);
+    } else if (type === 'snare') {
+      // Noise burst for snare
+      const bufferSize = ctx.sampleRate * 0.08;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.12, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+
+      // Add tonal component
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(200, time);
+      osc.frequency.exponentialRampToValueAtTime(80, time + 0.05);
+      oscGain.gain.setValueAtTime(0.1, time);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+
+      source.connect(gain);
+      gain.connect(dest);
+      osc.connect(oscGain);
+      oscGain.connect(dest);
+      source.start(time);
+      osc.start(time);
+      osc.stop(time + 0.1);
+    } else if (type === 'hat') {
+      // Short noise for hi-hat
+      const bufferSize = ctx.sampleRate * 0.03;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 7000;
+      gain.gain.setValueAtTime(0.06, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(dest);
+      source.start(time);
+    }
+  }
+
+  toggleMute() {
+    this._musicMuted = !this._musicMuted;
+    localStorage.setItem('drivemad_muted', this._musicMuted);
+    if (this._masterGain) {
+      this._masterGain.gain.linearRampToValueAtTime(
+        this._musicMuted ? 0 : 0.35,
+        this._audioCtx.currentTime + 0.1
+      );
+    }
+    this._updateMuteButton();
+  }
+
+  _createMuteButton() {
+    // Menu mute button
+    const menuBtn = document.createElement('div');
+    menuBtn.id = 'btn-mute-menu';
+    menuBtn.className = 'mute-btn';
+    menuBtn.textContent = this._musicMuted ? '🔇' : '🔊';
+    menuBtn.title = 'Toggle Music (M)';
+    menuBtn.addEventListener('click', (e) => { e.stopPropagation(); this.toggleMute(); });
+    document.getElementById('screen-menu').appendChild(menuBtn);
+  }
+
+  _updateMuteButton() {
+    const icon = this._musicMuted ? '🔇' : '🔊';
+    const menuBtn = document.getElementById('btn-mute-menu');
+    if (menuBtn) menuBtn.textContent = icon;
+    const hudBtn = document.getElementById('btn-mute-hud');
+    if (hudBtn) hudBtn.innerHTML = `${icon} Music`;
   }
 }
 

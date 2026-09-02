@@ -141,8 +141,8 @@ class SeeSaw {
     this.angle = 0;
     this.angVel = 0;
     this.w = w;
-    this.inertia = 50;
-    this.damping = 0.94;
+    this.inertia = 400;    // very heavy plank — resists tipping strongly
+    this.damping = 0.80;   // heavy damping kills oscillation quickly
   }
 
   applyTorque(t, dt) {
@@ -150,10 +150,10 @@ class SeeSaw {
   }
 
   integrate(dt) {
-    this.angVel -= this.angle * 6.5 * dt;
+    this.angVel -= this.angle * 35 * dt;   // very strong spring restoring force
     this.angVel *= Math.pow(this.damping, dt * 60);
     this.angle += this.angVel * dt;
-    this.angle = Math.max(-Math.PI * 0.38, Math.min(Math.PI * 0.38, this.angle));
+    this.angle = Math.max(-Math.PI * 0.10, Math.min(Math.PI * 0.10, this.angle)); // ±18° max tilt
   }
 
   getSurface() {
@@ -391,7 +391,7 @@ class PhysicsWorld {
           // Transfer weight onto see-saws
           if (line.seeSaw) {
             const offset = wPos.x - line.seeSaw.pivot.x;
-            line.seeSaw.applyTorque(car.mass * Math.abs(this.gravity) * offset * 0.85, dt);
+            line.seeSaw.applyTorque(car.mass * Math.abs(this.gravity) * offset * 0.15, dt);
           }
 
           // Visual spin

@@ -72,6 +72,7 @@
     .modal-overlay.active { pointer-events:auto; }
     #screen-crash { background:rgba(200,20,20,.55); backdrop-filter:blur(10px); }
     #screen-win   { background:rgba(10,160,100,.5);  backdrop-filter:blur(10px); }
+    #screen-pause { background:rgba(15,23,42,.7);    backdrop-filter:blur(10px); }
     .overlay-emoji { font-size:clamp(52px,11vw,96px); }
     .overlay-title { font-size:clamp(28px,7vw,58px); font-weight:900; color:#fff;
                      margin-top:8px; text-shadow:0 2px 12px rgba(0,0,0,.35); }
@@ -102,6 +103,18 @@
     .ctrl-btn-fwd { background:rgba(255,107,53,.35); border-color:rgba(255,107,53,.6); }
     .ctrl-lbl { font-size:11px; font-weight:800; color:rgba(255,255,255,.4); letter-spacing:2px;
                 text-transform:uppercase; pointer-events:none; }
+
+    /* Mute Button */
+    .mute-btn { position:fixed; bottom:24px; right:24px; width:52px; height:52px;
+                border-radius:50%; background:rgba(255,255,255,.12); backdrop-filter:blur(10px);
+                border:2px solid rgba(255,255,255,.2); display:flex; align-items:center;
+                justify-content:center; font-size:24px; cursor:pointer; z-index:200;
+                transition:all .15s; user-select:none; }
+    .mute-btn:hover { background:rgba(255,107,53,.4); border-color:#ff6b35; transform:scale(1.1); }
+    #btn-pause-hud { cursor:pointer; }
+    #btn-pause-hud:hover { background:rgba(255,255,255,.2); }
+    #btn-mute-hud { cursor:pointer; }
+    #btn-mute-hud:hover { background:rgba(255,107,53,.6); }
   </style>
 </head>
 <body>
@@ -136,11 +149,25 @@
   </div>
 </div>
 
+<!-- PAUSE SCREEN -->
+<div id="screen-pause" class="modal-overlay hidden">
+  <div class="overlay-emoji">⏸️</div>
+  <div class="overlay-title">Game Paused</div>
+  <div class="overlay-sub">Take a breather and resume when ready!</div>
+  <div class="overlay-btns">
+    <button class="btn-big btn-primary" id="btn-pause-resume" onclick="game.togglePause()">Resume ▶</button>
+    <button class="btn-big btn-secondary" id="btn-pause-restart" onclick="game.restartLevel()">Restart 🔄</button>
+    <button class="btn-big btn-secondary" id="btn-pause-menu" onclick="game.goToMenu()">Menu 🏠</button>
+  </div>
+</div>
+
 <!-- HUD -->
 <div id="hud" style="display:none">
   <div class="hud-pill">🎮 <span id="hud-level-name">Level 1</span></div>
   <div class="hud-pill">⏱ <span id="hud-timer">0.00s</span></div>
+  <div class="hud-pill" id="btn-pause-hud"   onclick="game.togglePause()">⏸ Pause</div>
   <div class="hud-pill" id="btn-restart-hud" onclick="game.restartLevel()">🔄 Restart</div>
+  <div class="hud-pill" id="btn-mute-hud"    onclick="game.toggleMute()">🔊 Music</div>
   <div class="hud-pill" id="btn-menu-hud"    onclick="game.goToMenu()">🏠 Menu</div>
 </div>
 <div id="progress-bar-wrap" style="display:none"><div id="progress-bar-fill"></div></div>
