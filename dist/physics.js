@@ -102,10 +102,11 @@ class TrackGeometry {
           break;
         }
         case 'boost': {
-          // Turbo boost pad
-          const y = seg.y;
+          // Turbo boost pad or accelerating ramp
+          const y0 = seg.y;
+          const y1 = seg.y + (seg.rise || 0);
           const x0 = seg.x, x1 = seg.x + seg.w;
-          const line = TrackGeometry.seg(x0, y, x1, y);
+          const line = TrackGeometry.seg(x0, y0, x1, y1);
           line.isBoost = true;
           line.boostPower = seg.power || 32;
           lines.push(line);

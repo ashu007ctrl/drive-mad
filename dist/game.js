@@ -235,8 +235,7 @@ class DriveMadGame {
     document.getElementById('progress-bar-wrap').style.display = 'block';
     document.getElementById('on-screen-controls').style.display = 'flex';
     document.getElementById('hud-level-name').textContent = lvl.name || `Level ${index + 1}`;
-    const pauseBtn = document.getElementById('btn-pause-hud');
-    if (pauseBtn) pauseBtn.textContent = '⏸ Pause';
+    this._updatePauseButton(false);
 
     this.physics = new PhysicsWorld(CAR_CONFIG);
     this.physics.loadLevel(lvl);
@@ -255,17 +254,11 @@ class DriveMadGame {
     this.particles = [];
     this.confetti = [];
 
-    // Switch music: Adjacent levels always have different songs!
-    const newSong = this._getSongForLevel(index);
-    const songData = this._getSongData(newSong);
     const songPill = document.getElementById('hud-song-name');
-    if (songPill) songPill.textContent = songData.song.title;
+    if (songPill) songPill.textContent = '🎵 Daru Badnaam (Kamal Kahlon)';
 
-    if (newSong !== this._currentSongIndex && this._musicStarted) {
-      this._restartMusicWithSong(newSong);
-    } else if (this._currentSongIndex === -1) {
-      this._currentSongIndex = newSong;
-    }
+    this._startMusic();
+    this._playRealTrack();
   }
 
   restartLevel() {
@@ -275,6 +268,9 @@ class DriveMadGame {
   goToMenu() {
     this.state = 'MENU';
     this._releaseAll();
+    if (this._audioPlayer && !this._audioPlayer.paused) {
+      this._audioPlayer.pause();
+    }
     document.getElementById('hud').style.display = 'none';
     document.getElementById('progress-bar-wrap').style.display = 'none';
     document.getElementById('on-screen-controls').style.display = 'none';
@@ -304,8 +300,10 @@ class DriveMadGame {
       this._pauseStartTime = performance.now();
       this._releaseAll();
       document.getElementById('on-screen-controls').style.display = 'none';
-      const pauseBtn = document.getElementById('btn-pause-hud');
-      if (pauseBtn) pauseBtn.textContent = '▶ Resume';
+      this._updatePauseButton(true);
+      if (this._audioPlayer && !this._audioPlayer.paused) {
+        this._audioPlayer.pause();
+      }
       this._setScreen('screen-pause');
     } else if (this.state === 'PAUSED') {
       this.state = 'PLAYING';
@@ -313,10 +311,20 @@ class DriveMadGame {
       this.startTime += pausedDuration;
       this._lastTime = performance.now();
       document.getElementById('on-screen-controls').style.display = 'flex';
-      const pauseBtn = document.getElementById('btn-pause-hud');
-      if (pauseBtn) pauseBtn.textContent = '⏸ Pause';
+      this._updatePauseButton(false);
+      if (this._audioPlayer && !this._musicMuted) {
+        this._audioPlayer.play().catch(e => {});
+      }
       this._setScreen(null);
     }
+  }
+
+  _updatePauseButton(isPaused) {
+    const pauseBtn = document.getElementById('btn-pause-hud');
+    if (!pauseBtn) return;
+    const icon = isPaused ? '▶' : '⏸';
+    const text = isPaused ? ' Resume' : ' Pause';
+    pauseBtn.innerHTML = `<span>${icon}</span><span class="hud-btn-text">${text}</span>`;
   }
 
   _showStuntToast(text) {
@@ -781,33 +789,42 @@ class DriveMadGame {
         return;
       }
 
-      // TURBO BOOST PAD
+      // TURBO BOOST PAD / ACCELERATING RAMP
       if (seg.type === 'boost') {
+        const rise = seg.rise || 0;
         const p0 = toScreen(seg.x, seg.y);
-        const p1 = toScreen(seg.x + seg.w, seg.y);
-        const w = seg.w * PPU;
+        const p1 = toScreen(seg.x + seg.w, seg.y + rise);
+        const dx = p1.x - p0.x;
+        const dy = p1.y - p0.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+
+        ctx.save();
+        ctx.translate(p0.x, p0.y);
+        ctx.rotate(angle);
 
         // Glowing base
         ctx.fillStyle = '#004d40';
-        ctx.fillRect(p0.x, p0.y, w, PPU * 0.4);
+        ctx.fillRect(0, 0, len, PPU * 0.4);
         ctx.strokeStyle = '#00e5ff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(p0.x, p0.y, w, PPU * 0.4);
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(0, 0, len, PPU * 0.4);
 
         // Animated neon chevrons
-        const offset = (this.boostAnim * 20) % 24;
+        const offset = (this.boostAnim * 22) % 24;
         ctx.fillStyle = '#00e5ff';
-        for (let x = p0.x + offset - 20; x < p0.x + w; x += 24) {
-          if (x >= p0.x && x + 12 <= p0.x + w) {
+        for (let x = offset - 24; x < len; x += 24) {
+          if (x >= 0 && x + 12 <= len) {
             ctx.beginPath();
-            ctx.moveTo(x, p0.y + 4);
-            ctx.lineTo(x + 10, p0.y + PPU * 0.2);
-            ctx.lineTo(x, p0.y + PPU * 0.4 - 4);
-            ctx.lineTo(x + 5, p0.y + PPU * 0.2);
+            ctx.moveTo(x, 4);
+            ctx.lineTo(x + 10, PPU * 0.2);
+            ctx.lineTo(x, PPU * 0.4 - 4);
+            ctx.lineTo(x + 5, PPU * 0.2);
             ctx.closePath();
             ctx.fill();
           }
         }
+        ctx.restore();
         return;
       }
 
@@ -1364,6 +1381,39 @@ class DriveMadGame {
     this._compressor = null;
     this._musicPlaying = false;
     this._musicTimeout = null;
+
+    // Real audio player for user-provided actual song "Daru Badnaam"
+    try {
+      this._audioPlayer = new Audio(encodeURI('Daru Badnaam.mp3'));
+      this._audioPlayer.loop = true;
+      this._audioPlayer.preload = 'auto';
+      this._audioPlayer.volume = this._musicMuted ? 0 : 0.75;
+      this._audioPlayer.addEventListener('error', () => {
+        if (this._audioPlayer.src.indexOf('daru-badnaam.mp3') === -1) {
+          this._audioPlayer.src = 'daru-badnaam.mp3';
+          this._audioPlayer.load();
+        }
+      });
+    } catch(e) {
+      console.warn('Audio player init warning:', e);
+    }
+  }
+
+  _playRealTrack() {
+    if (!this._audioPlayer) {
+      try {
+        this._audioPlayer = new Audio(encodeURI('Daru Badnaam.mp3'));
+        this._audioPlayer.loop = true;
+      } catch(e) {}
+    }
+    if (!this._audioPlayer) return;
+    this._audioPlayer.volume = this._musicMuted ? 0 : 0.75;
+    this._audioPlayer.muted = this._musicMuted;
+    if (!this._musicMuted && this._audioPlayer.paused) {
+      this._audioPlayer.play().catch(e => {
+        // Will play upon next user tap/interaction
+      });
+    }
   }
 
   /**
@@ -1376,73 +1426,81 @@ class DriveMadGame {
 
   _getSongData(songIndex) {
     const noteFreqs = {
-      'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00,
-      'A3': 220.00, 'B3': 246.94,
-      'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00,
-      'A4': 440.00, 'B4': 493.88,
-      'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'G5': 783.99, 'A5': 880.00,
+      'C3': 130.81, 'D3': 146.83, 'Eb3': 155.56, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00,
+      'A3': 220.00, 'Bb3': 233.08, 'B3': 246.94,
+      'C4': 261.63, 'D4': 293.66, 'Eb4': 311.13, 'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00,
+      'A4': 440.00, 'Bb4': 466.16, 'B4': 493.88,
+      'C5': 523.25, 'D5': 587.33, 'Eb5': 622.25, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00,
     };
 
     const songs = [
-      // ─── SONG 0: Turbo Hop (C Major, bouncy arcade) ───
+      // ─── BOLLYWOOD TRACK 1: "Daru Badnaam" (Kamal Kahlon / Param Singh) ───
       {
-        title: 'Track 1: Turbo Hop',
-        BPM: 142, melodyWave: 'square', melodyVol: 0.08, bassVol: 0.13,
+        title: '🎵 Daru Badnaam',
+        BPM: 138, melodyWave: 'sawtooth', melodyVol: 0.08, bassVol: 0.16,
         melodyPatterns: [
-          ['C4','E4','G4','C5', 'B4','G4','E4','G4', 'A4','C5','E5','C5', 'G4','E4','D4','E4'],
-          ['E5','D5','C5','G4', 'A4','G4','E4','D4', 'C4','E4','G4','A4', 'G4','E4','C4','E4'],
-          ['G4','G4','A4','B4', 'C5','C5','B4','A4', 'G4','A4','G4','E4', 'D4','E4','G4','G4'],
-          ['C5','E5','D5','C5', 'G4','A4','G4','E4', 'C4','D4','E4','G4', 'A4','G4','E4','C4'],
+          // "Goreyan gallan ch pein toye... daru badnaam kardi"
+          ['D4','F4','G4','G4', 'A4','A4','G4','F4', 'G4','A4','G4','F4', 'D4','D4','F4','D4'],
+          // "Oye daru badnaam kardi... daru badnaam kardi"
+          ['F4','G4','A4','A4', 'C5','C5','A4','G4', 'F4','G4','A4','G4', 'F4','E4','D4','D4'],
+          // High hook melody
+          ['A4','A4','C5','D5', 'D5','C5','A4','G4', 'A4','C5','A4','G4', 'F4','G4','A4','G4'],
+          // Drop resolution
+          ['F4','G4','A4','A4', 'C5','A4','G4','F4', 'G4','A4','G4','F4', 'D4','D4','D4','D4'],
         ],
         bassPatterns: [
-          ['C3','C3','F3','G3'],
-          ['A3','A3','F3','G3'],
-          ['C3','E3','F3','G3'],
-          ['C3','G3','F3','E3'],
+          ['D3','D3','F3','G3'],
+          ['D3','D3','C3','D3'],
+          ['G3','G3','A3','D3'],
+          ['D3','F3','G3','D3'],
         ],
         drumPattern: [
-          [0, 'kick'], [0.5, 'hat'], [1, 'snare'], [1.5, 'hat'],
-          [2, 'kick'], [2.5, 'hat'], [3, 'snare'], [3.5, 'hat'],
+          // Punchy Bollywood Bhangra dhol groove
+          [0, 'kick'], [0.5, 'hat'], [0.75, 'hat'], [1, 'snare'],
+          [1.5, 'hat'], [1.75, 'kick'], [2, 'kick'], [2.5, 'hat'],
+          [3, 'snare'], [3.25, 'hat'], [3.5, 'hat'], [3.75, 'hat'],
         ],
       },
 
-      // ─── SONG 1: Night Drift (A Minor, driving synthwave groove) ───
+      // ─── BOLLYWOOD TRACK 2: "Mundian To Bach Ke" (Panjabi MC / Baaghi) ───
       {
-        title: 'Track 2: Night Drift',
-        BPM: 148, melodyWave: 'sawtooth', melodyVol: 0.065, bassVol: 0.15,
+        title: '🎵 Mundian To Bach Ke',
+        BPM: 140, melodyWave: 'sawtooth', melodyVol: 0.075, bassVol: 0.16,
         melodyPatterns: [
-          ['A4','C5','E5','A4', 'G4','E4','C4','E4', 'D4','F4','A4','F4', 'E4','C4','A3','C4'],
-          ['E5','D5','C5','A4', 'G4','F4','E4','D4', 'C4','E4','A4','C5', 'B4','A4','G4','E4'],
-          ['A4','A4','C5','D5', 'E5','E5','D5','C5', 'A4','C5','A4','G4', 'F4','E4','D4','E4'],
-          ['C5','E5','D5','C5', 'A4','G4','A4','C5', 'D5','C5','A4','G4', 'A4','C5','E5','A4'],
+          // Iconic Tumbi Riff
+          ['D4','D4','F4','G4', 'D4','D4','F4','G4', 'G4','G4','F4','D4', 'C4','D4','F4','G4'],
+          ['D5','D5','C5','A4', 'G4','F4','G4','A4', 'G4','F4','D4','C4', 'D4','D4','D4','D4'],
+          ['D4','F4','G4','A4', 'C5','A4','G4','F4', 'D4','D4','F4','G4', 'A4','G4','F4','D4'],
+          ['G4','A4','C5','D5', 'C5','A4','G4','F4', 'G4','A4','G4','F4', 'D4','D4','D4','D4'],
         ],
         bassPatterns: [
-          ['A3','A3','D3','E3'],
-          ['A3','G3','F3','E3'],
-          ['D3','D3','E3','A3'],
-          ['A3','E3','F3','G3'],
+          ['D3','D3','D3','D3'],
+          ['G3','G3','A3','D3'],
+          ['D3','D3','C3','D3'],
+          ['G3','A3','D3','D3'],
         ],
         drumPattern: [
           [0, 'kick'], [0.25, 'hat'], [0.75, 'hat'], [1, 'snare'],
-          [1.5, 'hat'], [2, 'kick'], [2.5, 'kick'], [3, 'snare'], [3.5, 'hat'],
+          [1.5, 'hat'], [1.75, 'hat'], [2, 'kick'], [2.5, 'kick'], [3, 'snare'], [3.5, 'hat'],
         ],
       },
 
-      // ─── SONG 2: Cyber Peak (G Mixolydian, epic rock beat) ───
+      // ─── BOLLYWOOD TRACK 3: "Kala Chashma" (Baar Baar Dekho / Amar Arshi) ───
       {
-        title: 'Track 3: Cyber Peak',
-        BPM: 134, melodyWave: 'square', melodyVol: 0.075, bassVol: 0.14,
+        title: '🎵 Kala Chashma',
+        BPM: 136, melodyWave: 'square', melodyVol: 0.08, bassVol: 0.15,
         melodyPatterns: [
-          ['G4','B4','D5','G5', 'F5','D5','B4','D5', 'C5','E5','G5','E5', 'D5','B4','A4','B4'],
-          ['G5','F5','E5','D5', 'C5','B4','A4','G4', 'A4','B4','D5','E5', 'D5','B4','G4','A4'],
-          ['D5','D5','E5','F5', 'G5','G5','F5','E5', 'D5','E5','D5','B4', 'A4','B4','D5','D5'],
-          ['G5','A5','G5','E5', 'D5','C5','D5','E5', 'G4','A4','B4','D5', 'E5','D5','B4','G4'],
+          // "Tenu kala chashma jachda ae, jachda ae gore mukhde te"
+          ['F4','F4','G4','A4', 'A4','G4','F4','G4', 'A4','A4','C5','A4', 'G4','F4','G4','A4'],
+          ['C5','C5','D5','C5', 'A4','G4','F4','G4', 'A4','C5','A4','G4', 'F4','E4','D4','D4'],
+          ['D4','F4','G4','A4', 'C5','D5','C5','A4', 'G4','A4','C5','A4', 'G4','F4','D4','D4'],
+          ['F4','G4','A4','C5', 'D5','D5','C5','A4', 'G4','A4','G4','F4', 'D4','D4','D4','D4'],
         ],
         bassPatterns: [
-          ['G3','G3','C3','D3'],
-          ['G3','F3','E3','D3'],
-          ['C3','C3','D3','G3'],
-          ['G3','D3','C3','D3'],
+          ['D3','F3','G3','A3'],
+          ['D3','C3','D3','D3'],
+          ['G3','A3','C3','D3'],
+          ['D3','G3','A3','D3'],
         ],
         drumPattern: [
           [0, 'kick'], [0.5, 'hat'], [1, 'snare'], [1.5, 'kick'],
@@ -1455,6 +1513,11 @@ class DriveMadGame {
   }
 
   _startMusic() {
+    this._musicStarted = true;
+    this._playRealTrack();
+    if (this._audioPlayer && !this._audioPlayer.paused) {
+      return;
+    }
     if (this._musicPlaying && this._audioCtx && this._audioCtx.state === 'running') return;
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -1543,6 +1606,7 @@ class DriveMadGame {
   }
 
   _scheduleMusicLoop() {
+    if (this._audioPlayer && !this._audioPlayer.paused) return;
     if (!this._audioCtx || !this._musicPlaying || !this._musicBus) return;
     const ctx = this._audioCtx;
     const dest = this._musicBus;
@@ -1756,6 +1820,13 @@ class DriveMadGame {
   toggleMute() {
     this._musicMuted = !this._musicMuted;
     localStorage.setItem('drivemad_muted', this._musicMuted);
+    if (this._audioPlayer) {
+      this._audioPlayer.muted = this._musicMuted;
+      this._audioPlayer.volume = this._musicMuted ? 0 : 0.75;
+      if (!this._musicMuted && this.state === 'PLAYING' && this._audioPlayer.paused) {
+        this._audioPlayer.play().catch(e => {});
+      }
+    }
     if (this._masterGain && this._audioCtx) {
       this._masterGain.gain.linearRampToValueAtTime(
         this._musicMuted ? 0 : 0.35,

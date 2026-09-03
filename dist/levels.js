@@ -95,19 +95,19 @@ const LEVELS = [
   {type:'flat',   x:58, y:2, w:12},
 ]},
 
-// 6: Hill climb valley + Super Jump Bounce
+// 6: Hill climb valley + Smooth Boost Jump Launch (100% winnable!)
 {name:'Level 6', theme:'sky', spawnX:1.5, spawnY:3, finishX:76, segments:[
-  {type:'flat',   x:0, y:2, w:10},
-  {type:'ramp',   x:10, y:2, w:8, rise:3},
-  {type:'flat',   x:18, y:5, w:6},
-  {type:'ramp',   x:24, y:5, w:8, rise:-3},
-  {type:'flat',   x:32, y:2, w:5},
-  {type:'bounce', x:37, y:2, w:3, power:15},
-  {type:'ramp',   x:40, y:2, w:6, rise:3.5},
-  {type:'gap',    x:46, w:4},
-  {type:'flat',   x:50, y:2, w:8},
-  {type:'ramp',   x:58, y:2, w:6, rise:2},
-  {type:'flat',   x:64, y:4, w:14},
+  {type:'flat',  x:0, y:2, w:10},
+  {type:'ramp',  x:10, y:2, w:8, rise:3},
+  {type:'flat',  x:18, y:5, w:6},
+  {type:'ramp',  x:24, y:5, w:8, rise:-3},
+  {type:'flat',  x:32, y:2, w:4},
+  {type:'boost', x:36, y:2, w:4, rise:1.5, power:24}, // Accelerating boost ramp launch
+  {type:'gap',   x:40, w:3.5},
+  {type:'ramp',  x:43.5, y:3.5, w:5, rise:-1.5},       // Smooth landing ramp
+  {type:'flat',  x:48.5, y:2, w:8},
+  {type:'ramp',  x:56.5, y:2, w:6, rise:2},
+  {type:'flat',  x:62.5, y:4, w:16},
 ]},
 
 // 7: Bridge and bumps combo
@@ -123,21 +123,21 @@ const LEVELS = [
   {type:'flat',   x:64, y:2, w:18},
 ]},
 
-// 8: Rolling hills, no gaps
+// 8: Rolling hills + accelerating launch ramp
 {name:'Level 8', theme:'sky', spawnX:1.5, spawnY:3, finishX:82, segments:[
-  {type:'flat', x:0, y:2, w:8},
-  {type:'ramp', x:8, y:2, w:6, rise:2},
-  {type:'flat', x:14, y:4, w:4},
-  {type:'ramp', x:18, y:4, w:6, rise:-2},
-  {type:'flat', x:24, y:2, w:4},
-  {type:'ramp', x:28, y:2, w:6, rise:3},
-  {type:'flat', x:34, y:5, w:6},
-  {type:'ramp', x:40, y:5, w:6, rise:-3},
-  {type:'flat', x:46, y:2, w:4},
-  {type:'ramp', x:50, y:2, w:6, rise:2},
-  {type:'flat', x:56, y:4, w:4},
-  {type:'ramp', x:60, y:4, w:6, rise:-2},
-  {type:'flat', x:66, y:2, w:18},
+  {type:'flat',  x:0, y:2, w:8},
+  {type:'ramp',  x:8, y:2, w:6, rise:2},
+  {type:'flat',  x:14, y:4, w:4},
+  {type:'ramp',  x:18, y:4, w:6, rise:-2},
+  {type:'flat',  x:24, y:2, w:4},
+  {type:'ramp',  x:28, y:2, w:6, rise:3},
+  {type:'flat',  x:34, y:5, w:6},
+  {type:'ramp',  x:40, y:5, w:6, rise:-3},
+  {type:'flat',  x:46, y:2, w:4},
+  {type:'boost', x:50, y:2, w:5, rise:2, power:26}, // Accelerating boost ramp
+  {type:'flat',  x:55, y:4, w:5},
+  {type:'ramp',  x:60, y:4, w:6, rise:-2},
+  {type:'flat',  x:66, y:2, w:18},
 ]},
 
 // 9: Bumpy road with hills
@@ -156,16 +156,16 @@ const LEVELS = [
   {type:'flat', x:53, y:2, w:30},
 ]},
 
-// 10: Bridge + small gap
+// 10: Bridge + accelerating ramp gap
 {name:'Level 10', theme:'sky', spawnX:1.5, spawnY:3, finishX:84, segments:[
   {type:'flat',   x:0, y:2, w:10},
   {type:'bridge', x:10, y:2, w:18, sag:1.5},
-  {type:'flat',   x:28, y:2, w:6},
-  {type:'ramp',   x:34, y:2, w:6, rise:2},
-  {type:'gap',    x:40, w:3},
-  {type:'flat',   x:43, y:2, w:6},
-  {type:'bridge', x:49, y:2, w:16, sag:1.8},
-  {type:'flat',   x:65, y:2, w:22},
+  {type:'flat',   x:28, y:2, w:4},
+  {type:'boost',  x:32, y:2, w:5, rise:2, power:28}, // Accelerating boost ramp
+  {type:'gap',    x:37, w:3.5},
+  {type:'flat',   x:40.5, y:2, w:6},
+  {type:'bridge', x:46.5, y:2, w:18, sag:1.8},
+  {type:'flat',   x:64.5, y:2, w:22},
 ]},
 
 // ══ WORLD 2: Sunset (11-20) — Bigger hills, longer bridges ══════════════════
@@ -213,18 +213,18 @@ const LEVELS = [
   {type:'flat', x:67, y:2, w:18},
 ]},
 
-// 14: Hill with bridge on top
+// 14: Hill with bridge on top + accelerating gap launch
 {name:'Level 14', theme:'sunset', spawnX:1.5, spawnY:3, finishX:88, segments:[
   {type:'flat',   x:0, y:2, w:10},
   {type:'ramp',   x:10, y:2, w:8, rise:3},
   {type:'bridge', x:18, y:5, w:18, sag:1.5},
   {type:'ramp',   x:36, y:5, w:8, rise:-3},
-  {type:'flat',   x:44, y:2, w:8},
-  {type:'ramp',   x:52, y:2, w:6, rise:2},
-  {type:'gap',    x:58, w:3},
-  {type:'flat',   x:61, y:2, w:6},
-  {type:'ramp',   x:67, y:2, w:6, rise:1.5},
-  {type:'flat',   x:73, y:3.5, w:18},
+  {type:'flat',   x:44, y:2, w:6},
+  {type:'boost',  x:50, y:2, w:5, rise:2.2, power:28}, // Accelerating boost ramp
+  {type:'gap',    x:55, w:3.5},
+  {type:'flat',   x:58.5, y:2, w:6},
+  {type:'ramp',   x:64.5, y:2, w:6, rise:1.5},
+  {type:'flat',   x:70.5, y:3.5, w:20},
 ]},
 
 // 15: Roller coaster with steep switchbacks
@@ -276,20 +276,20 @@ const LEVELS = [
   {type:'flat',   x:74, y:2, w:24},
 ]},
 
-// 18: Mountain pass + gap
+// 18: Mountain pass + accelerating gap launch
 {name:'Level 18', theme:'sunset', spawnX:1.5, spawnY:3, finishX:92, segments:[
-  {type:'flat', x:0, y:2, w:10},
-  {type:'ramp', x:10, y:2, w:8, rise:4},
-  {type:'flat', x:18, y:6, w:8},
-  {type:'ramp', x:26, y:6, w:6, rise:2},
-  {type:'gap',  x:32, w:3},
-  {type:'flat', x:35, y:6, w:8},
-  {type:'ramp', x:43, y:6, w:8, rise:-4},
-  {type:'flat', x:51, y:2, w:6},
-  {type:'ramp', x:57, y:2, w:8, rise:3},
-  {type:'flat', x:65, y:5, w:6},
-  {type:'ramp', x:71, y:5, w:8, rise:-3},
-  {type:'flat', x:79, y:2, w:16},
+  {type:'flat',  x:0, y:2, w:10},
+  {type:'ramp',  x:10, y:2, w:8, rise:4},
+  {type:'flat',  x:18, y:6, w:6},
+  {type:'boost', x:24, y:6, w:6, rise:2, power:28}, // Accelerating boost ramp
+  {type:'gap',   x:30, w:4},
+  {type:'flat',  x:34, y:6, w:8},
+  {type:'ramp',  x:42, y:6, w:8, rise:-4},
+  {type:'flat',  x:50, y:2, w:6},
+  {type:'ramp',  x:56, y:2, w:8, rise:3},
+  {type:'flat',  x:64, y:5, w:6},
+  {type:'ramp',  x:70, y:5, w:8, rise:-3},
+  {type:'flat',  x:78, y:2, w:16},
 ]},
 
 // 19: Double bridge height
@@ -699,22 +699,22 @@ const LEVELS = [
   {type:'flat',   x:88, y:2, w:18},
 ]},
 
-// 43: Candy gaps
+// 43: Candy accelerating ramps
 {name:'Level 43', theme:'candy', spawnX:1.5, spawnY:3, finishX:96, segments:[
-  {type:'flat', x:0, y:2, w:8},
-  {type:'ramp', x:8, y:2, w:6, rise:2},
-  {type:'gap',  x:14, w:3},
-  {type:'flat', x:17, y:2, w:6},
-  {type:'ramp', x:23, y:2, w:6, rise:2.5},
-  {type:'gap',  x:29, w:3.5},
-  {type:'flat', x:32.5, y:2, w:6},
-  {type:'ramp', x:38.5, y:2, w:6, rise:3},
-  {type:'gap',  x:44.5, w:4},
-  {type:'flat', x:48.5, y:2, w:8},
-  {type:'ramp', x:56.5, y:2, w:6, rise:2},
-  {type:'flat', x:62.5, y:4, w:6},
-  {type:'ramp', x:68.5, y:4, w:6, rise:-2},
-  {type:'flat', x:74.5, y:2, w:24},
+  {type:'flat',  x:0, y:2, w:8},
+  {type:'boost', x:8, y:2, w:5, rise:2, power:28}, // Accelerating ramp 1
+  {type:'gap',   x:13, w:3.5},
+  {type:'flat',  x:16.5, y:2, w:6},
+  {type:'ramp',  x:22.5, y:2, w:6, rise:2.5},
+  {type:'gap',   x:28.5, w:3.5},
+  {type:'flat',  x:32, y:2, w:6},
+  {type:'boost', x:38, y:2, w:5, rise:3, power:32}, // Accelerating ramp 2
+  {type:'gap',   x:43, w:4.5},
+  {type:'flat',  x:47.5, y:2, w:8},
+  {type:'ramp',  x:55.5, y:2, w:6, rise:2},
+  {type:'flat',  x:61.5, y:4, w:6},
+  {type:'ramp',  x:67.5, y:4, w:6, rise:-2},
+  {type:'flat',  x:73.5, y:2, w:25},
 ]},
 
 // 44: Candy bumps + hills

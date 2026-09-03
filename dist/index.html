@@ -118,29 +118,54 @@
     #btn-menu-hud:hover { background:rgba(255,255,255,.25); }
 
     /* ══════════════════════════════════════════════════════════════
-       MOBILE RESPONSIVENESS (< 768px): Sleek, Uncluttered Top Bar
+       MOBILE RESPONSIVENESS (< 860px / Landscape Phones):
+       - Song pill hidden on mobile for clean uncluttered view
+       - Stats pinned to Top-Left, Actions pinned to Top-Right
+       - Full open center space
        ══════════════════════════════════════════════════════════════ */
-    @media(max-width:768px){
-      #hud { padding:max(env(safe-area-inset-top),6px) max(env(safe-area-inset-right),8px) 4px max(env(safe-area-inset-left),8px); gap:4px; }
-      .hud-pill { padding:5px 9px; font-size:11px; gap:4px; }
-      .hud-btn-text { display:none; } /* Hide text on mobile so buttons become compact touch pills */
-      .hud-btn-action { padding:5px 8px; font-size:13px; border-radius:50%; width:32px; height:32px; justify-content:center; }
-      #hud-song-pill { max-width:115px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    }
-    @media(max-width:440px){
-      .hud-pill { padding:4px 7px; font-size:10px; }
-      #hud-song-pill { display:none; } /* Save maximum screen space on narrow phones */
-      .hud-btn-action { width:28px; height:28px; font-size:12px; }
+    @media(max-width:860px){
+      #hud {
+        padding:max(env(safe-area-inset-top),6px) max(env(safe-area-inset-right),10px) 0 max(env(safe-area-inset-left),10px);
+        justify-content:space-between;
+      }
+      /* Hide song track in mobile view as requested */
+      #hud-song-pill { display:none !important; }
+
+      /* Left stats cluster */
+      .hud-left { gap:4px; }
+      .hud-pill { padding:4px 8px; font-size:11px; border-radius:18px; }
+
+      /* Right actions cluster (Icon-only buttons save massive horizontal space) */
+      .hud-right { gap:4px; }
+      .hud-btn-text { display:none !important; }
+      .hud-btn-action { width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:13px; }
+
+      #progress-bar-wrap { top:12px; height:4px; width:min(160px,36vw); }
     }
 
-    /* Progress bar */
-    #progress-bar-wrap { position:fixed; top:52px; left:50%; transform:translateX(-50%);
-                         width:min(260px,55vw); height:6px; background:rgba(0,0,0,.45);
-                         border:1px solid rgba(255,255,255,.15); border-radius:100px; z-index:50; overflow:hidden; }
-    #progress-bar-fill { height:100%; background:linear-gradient(90deg,#ff6b35,#ffd700);
-                         border-radius:100px; width:0%; transition:width .08s; }
-    @media(max-width:768px){
-      #progress-bar-wrap { top:44px; height:4px; width:min(180px,45vw); }
+    /* Extra optimization for short screen heights (e.g. mobile landscape 830x296) */
+    @media(max-height:420px){
+      #hud { padding-top:max(env(safe-area-inset-top),4px); }
+      .hud-pill { padding:3px 6px; font-size:10px; }
+      .hud-btn-action { width:26px; height:26px; font-size:11px; }
+      #progress-bar-wrap { top:8px; height:3px; width:min(130px,30vw); }
+
+      #on-screen-controls {
+        padding-bottom:max(env(safe-area-inset-bottom),6px);
+      }
+      .ctrl-btn {
+        width:clamp(48px, 18vh, 62px);
+        height:clamp(48px, 18vh, 62px);
+        border-radius:14px;
+        font-size:clamp(18px, 6vh, 24px);
+      }
+      .ctrl-lbl {
+        font-size:7.5px;
+        letter-spacing:0.5px;
+      }
+      .ctrl-side-right {
+        gap:6px;
+      }
     }
 
     /* Stunt floating toast */
