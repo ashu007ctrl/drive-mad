@@ -20,7 +20,8 @@
     .screen { position:fixed; inset:0; display:flex; flex-direction:column;
               align-items:center; justify-content:center; z-index:100;
               transition:opacity .3s ease; }
-    .screen.hidden { opacity:0; pointer-events:none; }
+    .screen.hidden { opacity:0; pointer-events:none; display:none !important; }
+    .hidden { display:none !important; }
 
     /* Menu */
     #screen-menu { background:linear-gradient(160deg,#0f0c29,#302b63,#24243e);
@@ -178,9 +179,11 @@
     #stunt-toast.show { opacity:1; transform:translateX(-50%) scale(1.05); }
 
     /* Overlay screens */
-    .modal-overlay { position:fixed; inset:0; display:flex; flex-direction:column;
-                     align-items:center; justify-content:center; z-index:80; pointer-events:none; }
-    .modal-overlay.active { pointer-events:auto; }
+    .modal-overlay { position:fixed; inset:0; display:none; flex-direction:column;
+                     align-items:center; justify-content:center; z-index:80;
+                     opacity:0; pointer-events:none; transition:opacity .25s ease; }
+    .modal-overlay.active { display:flex !important; opacity:1 !important; pointer-events:auto !important; }
+    .modal-overlay.hidden { display:none !important; opacity:0 !important; pointer-events:none !important; }
     #screen-crash { background:rgba(200,20,20,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
     #screen-win   { background:rgba(10,160,100,.55); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
     #screen-pause { background:rgba(15,23,42,.75);   backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
@@ -312,11 +315,15 @@
     }
 
     #modal-about {
+      display: none;
       background: rgba(10, 15, 30, 0.88);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       z-index: 250;
       padding: 16px;
+    }
+    #modal-about.active {
+      display: flex !important;
     }
     .about-modal-card {
       position: relative;
@@ -571,7 +578,7 @@
 </div>
 
 <!-- ABOUT MODAL -->
-<div id="modal-about" class="modal-overlay hidden" onclick="if(event.target===this) game.toggleAboutModal(false)">
+<div id="modal-about" class="modal-overlay hidden" style="display:none" onclick="if(event.target===this) game.toggleAboutModal(false)">
   <div class="about-modal-card">
     <button class="about-close-btn" onclick="game.toggleAboutModal(false)" aria-label="Close">✕</button>
 
@@ -661,7 +668,7 @@
 <div id="stunt-toast">★ BACKFLIP! +500 ★</div>
 
 <!-- CRASH SCREEN -->
-<div id="screen-crash" class="modal-overlay">
+<div id="screen-crash" class="modal-overlay hidden" style="display:none">
   <div class="overlay-emoji">💥</div>
   <div class="overlay-title">You Crashed!</div>
   <div class="overlay-sub">Don't let your head touch the ground! Use Brake to control speed!</div>
@@ -672,7 +679,7 @@
 </div>
 
 <!-- WIN SCREEN -->
-<div id="screen-win" class="modal-overlay">
+<div id="screen-win" class="modal-overlay hidden" style="display:none">
   <div class="overlay-emoji">🏆</div>
   <div class="overlay-title">Level Complete!</div>
   <div class="overlay-sub" id="win-time-text">Time: 0.00s</div>
@@ -683,7 +690,7 @@
 </div>
 
 <!-- PAUSE SCREEN -->
-<div id="screen-pause" class="modal-overlay hidden">
+<div id="screen-pause" class="modal-overlay hidden" style="display:none">
   <div class="overlay-emoji">⏸️</div>
   <div class="overlay-title">Game Paused</div>
   <div class="overlay-sub">Take a breather and resume when ready!</div>

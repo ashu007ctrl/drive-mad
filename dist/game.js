@@ -52,6 +52,8 @@ class DriveMadGame {
     this._bindInput();
     this._buildMenu();
     this._createMuteButton();
+    this.toggleAboutModal(false);
+    this._setScreen('screen-menu');
 
     window.addEventListener('resize', () => this._resize());
 
@@ -277,6 +279,7 @@ class DriveMadGame {
     if (this._audioPlayer && !this._audioPlayer.paused) {
       this._audioPlayer.pause();
     }
+    this.toggleAboutModal(false);
     document.getElementById('hud').style.display = 'none';
     document.getElementById('progress-bar-wrap').style.display = 'none';
     document.getElementById('on-screen-controls').style.display = 'none';
@@ -1597,14 +1600,22 @@ class DriveMadGame {
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+function initDriveMad() {
+  if (window.game) return;
   window.game = new DriveMadGame();
 
-  document.getElementById('btn-crash-retry').onclick = () => game.restartLevel();
-  document.getElementById('btn-crash-menu').onclick = () => game.goToMenu();
-  document.getElementById('btn-win-next').onclick = () => {
-    const next = (game.currentLevelIndex + 1) % LEVELS.length;
-    game.loadLevel(next);
-  };
-  document.getElementById('btn-win-menu').onclick = () => game.goToMenu();
-});
+  document.getElementById('btn-crash-retry')?.addEventListener('click', () => window.game.restartLevel());
+  document.getElementById('btn-crash-menu')?.addEventListener('click', () => window.game.goToMenu());
+  document.getElementById('btn-win-next')?.addEventListener('click', () => {
+    const next = (window.game.currentLevelIndex + 1) % LEVELS.length;
+    window.game.loadLevel(next);
+  });
+  document.getElementById('btn-win-menu')?.addEventListener('click', () => window.game.goToMenu());
+  document.getElementById('btn-about-menu')?.addEventListener('click', () => window.game.toggleAboutModal(true));
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', initDriveMad);
+} else {
+  initDriveMad();
+}
