@@ -269,6 +269,283 @@
                 justify-content:center; font-size:24px; cursor:pointer; z-index:200;
                 transition:all .15s; user-select:none; }
     .mute-btn:hover { background:rgba(255,107,53,.4); border-color:#ff6b35; transform:scale(1.1); }
+
+    /* ══════════════════════════════════════════════════════════════
+       ABOUT LINK & MODAL (Game info, Controls, Instructions, Ashutosh Pandey)
+       ══════════════════════════════════════════════════════════════ */
+    .about-btn {
+      position: absolute;
+      top: max(env(safe-area-inset-top), 20px);
+      left: max(env(safe-area-inset-left), 22px);
+      padding: 7px 16px;
+      border-radius: 100px;
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      z-index: 150;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      user-select: none;
+    }
+    .about-btn:hover {
+      background: rgba(255, 107, 53, 0.38);
+      border-color: #ff6b35;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 107, 53, 0.45);
+    }
+    @media (max-width: 480px) {
+      .about-btn {
+        top: max(env(safe-area-inset-top), 12px);
+        left: max(env(safe-area-inset-left), 12px);
+        padding: 5px 12px;
+        font-size: 11px;
+        gap: 5px;
+      }
+    }
+
+    #modal-about {
+      background: rgba(10, 15, 30, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 250;
+      padding: 16px;
+    }
+    .about-modal-card {
+      position: relative;
+      background: linear-gradient(170deg, #1e1b4b, #0f172a, #0b0f19);
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 620px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), 0 0 35px rgba(255, 107, 53, 0.3);
+      overflow: hidden;
+      animation: modalPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.92) translateY(12px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .about-close-btn {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      z-index: 10;
+    }
+    .about-close-btn:hover {
+      background: rgba(239, 68, 68, 0.85);
+      border-color: #ef4444;
+      transform: scale(1.1);
+    }
+    .about-header {
+      padding: 22px 24px 14px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .about-title {
+      font-size: clamp(24px, 5vw, 34px);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+    .about-title span { color: #ff6b35; }
+    .about-title .badge {
+      font-size: 12px;
+      background: linear-gradient(135deg, #ff6b35, #ffd700);
+      color: #111;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 900;
+      vertical-align: middle;
+      margin-left: 6px;
+      letter-spacing: 1px;
+      display: inline-block;
+    }
+    .about-subtitle {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
+    .about-content {
+      padding: 18px 24px 32px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .about-content::-webkit-scrollbar { width: 6px; }
+    .about-content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+
+    .about-section {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 14px 18px;
+    }
+    .about-section-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: #ff9800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.5px;
+    }
+    .about-section p {
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .about-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .about-list li {
+      padding-left: 16px;
+      position: relative;
+    }
+    .about-list li::before {
+      content: '•';
+      position: absolute;
+      left: 3px;
+      color: #ff6b35;
+      font-size: 15px;
+      line-height: 1;
+    }
+    .keys-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .key-card {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .key-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    kbd {
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 6px;
+      padding: 2px 7px;
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffd700;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+    .key-desc {
+      font-size: 11.5px;
+      color: rgba(255, 255, 255, 0.75);
+      font-weight: 700;
+    }
+    .about-touch-tip {
+      margin-top: 10px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(96, 165, 250, 0.3);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #93c5fd;
+      line-height: 1.4;
+    }
+    .dev-section {
+      background: linear-gradient(135deg, rgba(255, 107, 53, 0.18), rgba(255, 215, 0, 0.12));
+      border: 1.5px solid rgba(255, 107, 53, 0.45);
+    }
+    .dev-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 4px;
+    }
+    .dev-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff6b35, #ffd700);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 4px 14px rgba(255, 107, 53, 0.5);
+      flex-shrink: 0;
+    }
+    .dev-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .dev-name {
+      font-size: 17px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+    .dev-role {
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffd700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .dev-bio {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.85);
+      line-height: 1.45;
+      margin-top: 4px;
+    }
+    .about-footer {
+      padding: 12px 24px 16px;
+      display: flex;
+      justify-content: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(15, 23, 42, 0.5);
+    }
   </style>
 </head>
 <body>
@@ -281,10 +558,103 @@
 
 <!-- MENU SCREEN -->
 <div id="screen-menu" class="screen">
+  <!-- Top Left About Link on Home Page -->
+  <div id="btn-about-menu" class="about-btn" onclick="game.toggleAboutModal(true)">
+    <span class="about-icon">ℹ️</span>
+    <span class="about-text">About</span>
+  </div>
+
   <div class="logo">Drive<span>Mad</span><span class="badge">PRO</span></div>
   <div class="subtitle">Physics Stunt Racing</div>
   <div id="level-select"></div>
   <div class="play-hint">Arrow Keys / A,D,Space · Air Rotation & Flips · Brake to Survive!</div>
+</div>
+
+<!-- ABOUT MODAL -->
+<div id="modal-about" class="modal-overlay hidden" onclick="if(event.target===this) game.toggleAboutModal(false)">
+  <div class="about-modal-card">
+    <button class="about-close-btn" onclick="game.toggleAboutModal(false)" aria-label="Close">✕</button>
+
+    <div class="about-header">
+      <div class="about-title">Drive<span>Mad</span><span class="badge">PRO</span></div>
+      <div class="about-subtitle">Everything you need to know to master the tracks!</div>
+    </div>
+
+    <div class="about-content">
+      <!-- Section 1: About Game -->
+      <div class="about-section">
+        <div class="about-section-title">🏎️ About The Game</div>
+        <p>
+          <strong>Drive Mad Pro</strong> is an intense physics-based stunt racing game. Take the wheel across 50 challenging, handcrafted levels featuring real-time mechanical suspension, in-air stunt rotation, 360° flips, dynamic obstacles, and high-speed nitro boost ramps—all backed by the hit Punjabi/Bollywood anthem <em>"Daru Badnaam"</em>!
+        </p>
+      </div>
+
+      <!-- Section 2: Instructions to Play -->
+      <div class="about-section">
+        <div class="about-section-title">🎯 Instructions To Play</div>
+        <ul class="about-list">
+          <li><strong>Cross the Finish Line:</strong> Guide your truck safely across tricky bridges, steep hills, gaps, and loops to the checkered flag.</li>
+          <li><strong>Protect the Driver:</strong> Don't let your driver's duck head touch the ground or obstacles, or your vehicle will crash!</li>
+          <li><strong>Throttle & Brake Balance:</strong> Never just hold gas! Use the brake to stabilize the car on steep downhill slopes and prevent backflips.</li>
+          <li><strong>Perform In-Air Flips:</strong> Lean back or forward while airborne to execute clean 360° backflips and frontflips for bonus stunt badges.</li>
+          <li><strong>Accelerating Boost Ramps:</strong> Hit cyan glowing boost pads at full speed to launch across chasms and clear long distances.</li>
+        </ul>
+      </div>
+
+      <!-- Section 3: Shortcut Keys & Controls -->
+      <div class="about-section">
+        <div class="about-section-title">⌨️ Shortcut Keys & Controls</div>
+        <div class="keys-grid">
+          <div class="key-card">
+            <div class="key-badge"><kbd>▶</kbd> <kbd>D</kbd> <kbd>W</kbd> <kbd>↑</kbd></div>
+            <div class="key-desc">Gas / Accelerate Forward / Lean Forward</div>
+          </div>
+          <div class="key-card">
+            <div class="key-badge"><kbd>🛑 Space</kbd> <kbd>B</kbd> <kbd>Shift</kbd></div>
+            <div class="key-desc">Brake / Stop Vehicle</div>
+          </div>
+          <div class="key-card">
+            <div class="key-badge"><kbd>◀</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>↓</kbd></div>
+            <div class="key-desc">Reverse / Lean Back / Backflip in Air</div>
+          </div>
+          <div class="key-card">
+            <div class="key-badge"><kbd>R</kbd></div>
+            <div class="key-desc">Quick Level Restart</div>
+          </div>
+          <div class="key-card">
+            <div class="key-badge"><kbd>P</kbd> <kbd>Esc</kbd></div>
+            <div class="key-desc">Pause / Resume Game</div>
+          </div>
+          <div class="key-card">
+            <div class="key-badge"><kbd>M</kbd></div>
+            <div class="key-desc">Mute / Unmute Music</div>
+          </div>
+        </div>
+        <div class="about-touch-tip">
+          📱 <strong>Mobile Players:</strong> Ergonomic on-screen controls: Left Thumb for <strong>◀ BACK / LEAN</strong>, Right Thumb for side-by-side <strong>🛑 BRAKE</strong> and <strong>▶ GAS</strong> with tactile vibration haptics!
+        </div>
+      </div>
+
+      <!-- Section 4: About the Developer -->
+      <div class="about-section dev-section">
+        <div class="about-section-title">👨‍💻 About The Developer</div>
+        <div class="dev-card">
+          <div class="dev-avatar">🚀</div>
+          <div class="dev-info">
+            <div class="dev-name">Ashutosh Pandey</div>
+            <div class="dev-role">Creator & Lead Developer</div>
+            <p class="dev-bio">
+              Passionate software engineer and game developer dedicated to building high-performance physics games, modern web applications, responsive user experiences, and interactive creative digital projects.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-footer">
+      <button class="btn-big btn-primary" onclick="game.toggleAboutModal(false)">Got It! Let's Drive 🏁</button>
+    </div>
+  </div>
 </div>
 
 <!-- STUNT TOAST -->

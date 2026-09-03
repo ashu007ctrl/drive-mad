@@ -121,6 +121,11 @@ class DriveMadGame {
         }
       }
       if (e.key === 'Escape') {
+        const modal = document.getElementById('modal-about');
+        if (modal && !modal.classList.contains('hidden')) {
+          this.toggleAboutModal(false);
+          return;
+        }
         if (this.state === 'PLAYING' || this.state === 'PAUSED') {
           this.togglePause();
         } else {
@@ -229,6 +234,7 @@ class DriveMadGame {
     this.currentLevelIndex = index;
     const lvl = LEVELS[index];
 
+    this.toggleAboutModal(false);
     this._setScreen(null);
 
     document.getElementById('hud').style.display = 'flex';
@@ -325,6 +331,20 @@ class DriveMadGame {
     const icon = isPaused ? '▶' : '⏸';
     const text = isPaused ? ' Resume' : ' Pause';
     pauseBtn.innerHTML = `<span>${icon}</span><span class="hud-btn-text">${text}</span>`;
+  }
+
+  toggleAboutModal(show) {
+    const modal = document.getElementById('modal-about');
+    if (!modal) return;
+    if (show) {
+      modal.classList.add('active');
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+    } else {
+      modal.classList.remove('active');
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    }
   }
 
   _showStuntToast(text) {
@@ -495,6 +515,9 @@ class DriveMadGame {
   _onCrash() {
     this.state = 'CRASHED';
     this.screenShake = 1.3;
+    if (this._audioPlayer && !this._audioPlayer.paused) {
+      this._audioPlayer.pause();
+    }
     this._playSFX('crash');
     this._releaseAll();
     document.getElementById('hud').style.display = 'none';
@@ -524,6 +547,9 @@ class DriveMadGame {
   _onWin() {
     if (this.state === 'WIN') return;
     this.state = 'WIN';
+    if (this._audioPlayer && !this._audioPlayer.paused) {
+      this._audioPlayer.pause();
+    }
     this._playSFX('win');
     this._releaseAll();
 
@@ -1409,116 +1435,22 @@ class DriveMadGame {
     if (!this._audioPlayer) return;
     this._audioPlayer.volume = this._musicMuted ? 0 : 0.75;
     this._audioPlayer.muted = this._musicMuted;
-    if (!this._musicMuted && this._audioPlayer.paused) {
+
+    // The song must ONLY play when user is actively playing the game!
+    if (this.state === 'PLAYING' && !this._musicMuted && this._audioPlayer.paused) {
       this._audioPlayer.play().catch(e => {
         // Will play upon next user tap/interaction
       });
+    } else if (this.state !== 'PLAYING' && !this._audioPlayer.paused) {
+      this._audioPlayer.pause();
     }
-  }
-
-  /**
-   * Returns song index (0, 1, or 2) cycling for adjacent levels.
-   * Adjacent levels ALWAYS have different songs!
-   */
-  _getSongForLevel(index) {
-    return Math.abs(index) % 3;
-  }
-
-  _getSongData(songIndex) {
-    const noteFreqs = {
-      'C3': 130.81, 'D3': 146.83, 'Eb3': 155.56, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00,
-      'A3': 220.00, 'Bb3': 233.08, 'B3': 246.94,
-      'C4': 261.63, 'D4': 293.66, 'Eb4': 311.13, 'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00,
-      'A4': 440.00, 'Bb4': 466.16, 'B4': 493.88,
-      'C5': 523.25, 'D5': 587.33, 'Eb5': 622.25, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00,
-    };
-
-    const songs = [
-      // ─── BOLLYWOOD TRACK 1: "Daru Badnaam" (Kamal Kahlon / Param Singh) ───
-      {
-        title: '🎵 Daru Badnaam',
-        BPM: 138, melodyWave: 'sawtooth', melodyVol: 0.08, bassVol: 0.16,
-        melodyPatterns: [
-          // "Goreyan gallan ch pein toye... daru badnaam kardi"
-          ['D4','F4','G4','G4', 'A4','A4','G4','F4', 'G4','A4','G4','F4', 'D4','D4','F4','D4'],
-          // "Oye daru badnaam kardi... daru badnaam kardi"
-          ['F4','G4','A4','A4', 'C5','C5','A4','G4', 'F4','G4','A4','G4', 'F4','E4','D4','D4'],
-          // High hook melody
-          ['A4','A4','C5','D5', 'D5','C5','A4','G4', 'A4','C5','A4','G4', 'F4','G4','A4','G4'],
-          // Drop resolution
-          ['F4','G4','A4','A4', 'C5','A4','G4','F4', 'G4','A4','G4','F4', 'D4','D4','D4','D4'],
-        ],
-        bassPatterns: [
-          ['D3','D3','F3','G3'],
-          ['D3','D3','C3','D3'],
-          ['G3','G3','A3','D3'],
-          ['D3','F3','G3','D3'],
-        ],
-        drumPattern: [
-          // Punchy Bollywood Bhangra dhol groove
-          [0, 'kick'], [0.5, 'hat'], [0.75, 'hat'], [1, 'snare'],
-          [1.5, 'hat'], [1.75, 'kick'], [2, 'kick'], [2.5, 'hat'],
-          [3, 'snare'], [3.25, 'hat'], [3.5, 'hat'], [3.75, 'hat'],
-        ],
-      },
-
-      // ─── BOLLYWOOD TRACK 2: "Mundian To Bach Ke" (Panjabi MC / Baaghi) ───
-      {
-        title: '🎵 Mundian To Bach Ke',
-        BPM: 140, melodyWave: 'sawtooth', melodyVol: 0.075, bassVol: 0.16,
-        melodyPatterns: [
-          // Iconic Tumbi Riff
-          ['D4','D4','F4','G4', 'D4','D4','F4','G4', 'G4','G4','F4','D4', 'C4','D4','F4','G4'],
-          ['D5','D5','C5','A4', 'G4','F4','G4','A4', 'G4','F4','D4','C4', 'D4','D4','D4','D4'],
-          ['D4','F4','G4','A4', 'C5','A4','G4','F4', 'D4','D4','F4','G4', 'A4','G4','F4','D4'],
-          ['G4','A4','C5','D5', 'C5','A4','G4','F4', 'G4','A4','G4','F4', 'D4','D4','D4','D4'],
-        ],
-        bassPatterns: [
-          ['D3','D3','D3','D3'],
-          ['G3','G3','A3','D3'],
-          ['D3','D3','C3','D3'],
-          ['G3','A3','D3','D3'],
-        ],
-        drumPattern: [
-          [0, 'kick'], [0.25, 'hat'], [0.75, 'hat'], [1, 'snare'],
-          [1.5, 'hat'], [1.75, 'hat'], [2, 'kick'], [2.5, 'kick'], [3, 'snare'], [3.5, 'hat'],
-        ],
-      },
-
-      // ─── BOLLYWOOD TRACK 3: "Kala Chashma" (Baar Baar Dekho / Amar Arshi) ───
-      {
-        title: '🎵 Kala Chashma',
-        BPM: 136, melodyWave: 'square', melodyVol: 0.08, bassVol: 0.15,
-        melodyPatterns: [
-          // "Tenu kala chashma jachda ae, jachda ae gore mukhde te"
-          ['F4','F4','G4','A4', 'A4','G4','F4','G4', 'A4','A4','C5','A4', 'G4','F4','G4','A4'],
-          ['C5','C5','D5','C5', 'A4','G4','F4','G4', 'A4','C5','A4','G4', 'F4','E4','D4','D4'],
-          ['D4','F4','G4','A4', 'C5','D5','C5','A4', 'G4','A4','C5','A4', 'G4','F4','D4','D4'],
-          ['F4','G4','A4','C5', 'D5','D5','C5','A4', 'G4','A4','G4','F4', 'D4','D4','D4','D4'],
-        ],
-        bassPatterns: [
-          ['D3','F3','G3','A3'],
-          ['D3','C3','D3','D3'],
-          ['G3','A3','C3','D3'],
-          ['D3','G3','A3','D3'],
-        ],
-        drumPattern: [
-          [0, 'kick'], [0.5, 'hat'], [1, 'snare'], [1.5, 'kick'],
-          [2, 'kick'], [2.5, 'hat'], [3, 'snare'], [3.25, 'hat'], [3.75, 'hat'],
-        ],
-      },
-    ];
-
-    return { song: songs[songIndex] || songs[0], noteFreqs };
   }
 
   _startMusic() {
     this._musicStarted = true;
     this._playRealTrack();
-    if (this._audioPlayer && !this._audioPlayer.paused) {
-      return;
-    }
-    if (this._musicPlaying && this._audioCtx && this._audioCtx.state === 'running') return;
+
+    // Initialize Web Audio context strictly for sound effects (SFX)
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
@@ -1529,212 +1461,22 @@ class DriveMadGame {
       if (ctx.state === 'suspended') {
         ctx.resume();
       }
-
       if (!this._masterGain) {
         this._masterGain = ctx.createGain();
-        this._masterGain.gain.value = this._musicMuted ? 0 : 0.35;
+        this._masterGain.gain.value = this._musicMuted ? 0 : 0.4;
         this._masterGain.connect(ctx.destination);
 
         const compressor = ctx.createDynamicsCompressor();
-        compressor.threshold.value = -20;
+        compressor.threshold.value = -18;
         compressor.knee.value = 10;
         compressor.ratio.value = 4;
         compressor.connect(this._masterGain);
         this._compressor = compressor;
 
-        // Dedicated SFX bus
+        // Dedicated SFX bus for sound effects
         this._sfxBus = ctx.createGain();
-        this._sfxBus.gain.value = 0.5;
+        this._sfxBus.gain.value = 0.55;
         this._sfxBus.connect(this._compressor);
-      }
-
-      // Music bus for glitch-free track transitions
-      if (this._musicBus) {
-        try { this._musicBus.disconnect(); } catch(e) {}
-      }
-      this._musicBus = ctx.createGain();
-      this._musicBus.gain.value = 1.0;
-      this._musicBus.connect(this._compressor);
-
-      this._musicPlaying = true;
-
-      if (this._currentSongIndex === -1) {
-        this._currentSongIndex = this._getSongForLevel(this.currentLevelIndex);
-      }
-
-      this._scheduleMusicLoop();
-    } catch (e) {
-      console.warn('Audio start failed:', e);
-    }
-  }
-
-  _restartMusicWithSong(songIndex) {
-    if (this._musicTimeout) {
-      clearTimeout(this._musicTimeout);
-      this._musicTimeout = null;
-    }
-    this._currentSongIndex = songIndex;
-
-    if (!this._audioCtx) {
-      this._startMusic();
-      return;
-    }
-
-    try {
-      if (this._audioCtx.state === 'suspended') {
-        this._audioCtx.resume();
-      }
-
-      // Smoothly disconnect previous notes
-      if (this._musicBus) {
-        try {
-          const oldBus = this._musicBus;
-          oldBus.gain.linearRampToValueAtTime(0.001, this._audioCtx.currentTime + 0.05);
-          setTimeout(() => { try { oldBus.disconnect(); } catch(e){} }, 60);
-        } catch(e) {}
-      }
-
-      this._musicBus = this._audioCtx.createGain();
-      this._musicBus.gain.value = 1.0;
-      this._musicBus.connect(this._compressor);
-
-      this._musicPlaying = true;
-      this._scheduleMusicLoop();
-    } catch (e) {
-      console.warn('Music transition failed:', e);
-    }
-  }
-
-  _scheduleMusicLoop() {
-    if (this._audioPlayer && !this._audioPlayer.paused) return;
-    if (!this._audioCtx || !this._musicPlaying || !this._musicBus) return;
-    const ctx = this._audioCtx;
-    const dest = this._musicBus;
-
-    const { song, noteFreqs } = this._getSongData(this._currentSongIndex);
-
-    const BPM = song.BPM;
-    const beatDur = 60 / BPM;
-    const barDur = beatDur * 4;
-
-    const totalBars = song.melodyPatterns.length * 4;
-    const loopDuration = totalBars * barDur;
-    const now = ctx.currentTime + 0.08;
-
-    for (let bar = 0; bar < totalBars; bar++) {
-      const patIdx = Math.floor(bar / 4) % song.melodyPatterns.length;
-      const melody = song.melodyPatterns[patIdx];
-      const bass = song.bassPatterns[patIdx];
-      const barStart = now + bar * barDur;
-
-      // Melody notes
-      const noteDur = barDur / melody.length;
-      melody.forEach((note, i) => {
-        if (!noteFreqs[note]) return;
-        this._playNote(ctx, dest, noteFreqs[note], barStart + i * noteDur, noteDur * 0.85, song.melodyWave, song.melodyVol);
-      });
-
-      // Bass
-      bass.forEach((note, i) => {
-        if (!noteFreqs[note]) return;
-        this._playNote(ctx, dest, noteFreqs[note], barStart + i * beatDur, beatDur * 0.9, 'triangle', song.bassVol);
-      });
-
-      // Drums
-      song.drumPattern.forEach(([beatOffset, type]) => {
-        const t = barStart + beatOffset * beatDur;
-        this._playDrum(ctx, dest, type, t);
-      });
-    }
-
-    const nextLoopTime = (loopDuration - 0.4) * 1000;
-    this._musicTimeout = setTimeout(() => {
-      if (this._musicPlaying) this._scheduleMusicLoop();
-    }, Math.max(100, nextLoopTime));
-  }
-
-  _playNote(ctx, dest, freq, startTime, duration, waveType, volume) {
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = waveType;
-      osc.frequency.setValueAtTime(freq, startTime);
-
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
-      gain.gain.setValueAtTime(volume, startTime + duration * 0.7);
-      gain.gain.linearRampToValueAtTime(0, startTime + duration);
-
-      osc.connect(gain);
-      gain.connect(dest);
-
-      osc.start(startTime);
-      osc.stop(startTime + duration + 0.05);
-    } catch(e) {}
-  }
-
-  _playDrum(ctx, dest, type, time) {
-    try {
-      if (type === 'kick') {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(160, time);
-        osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
-        gain.gain.setValueAtTime(0.22, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
-        osc.connect(gain);
-        gain.connect(dest);
-        osc.start(time);
-        osc.stop(time + 0.2);
-      } else if (type === 'snare') {
-        const bufferSize = ctx.sampleRate * 0.08;
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
-        }
-        const source = ctx.createBufferSource();
-        source.buffer = buffer;
-        const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0.13, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
-
-        const osc = ctx.createOscillator();
-        const oscGain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(200, time);
-        osc.frequency.exponentialRampToValueAtTime(80, time + 0.05);
-        oscGain.gain.setValueAtTime(0.1, time);
-        oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
-
-        source.connect(gain);
-        gain.connect(dest);
-        osc.connect(oscGain);
-        oscGain.connect(dest);
-        source.start(time);
-        osc.start(time);
-        osc.stop(time + 0.1);
-      } else if (type === 'hat') {
-        const bufferSize = ctx.sampleRate * 0.03;
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
-        }
-        const source = ctx.createBufferSource();
-        source.buffer = buffer;
-        const gain = ctx.createGain();
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.value = 7000;
-        gain.gain.setValueAtTime(0.06, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
-        source.connect(filter);
-        filter.connect(gain);
-        gain.connect(dest);
-        source.start(time);
       }
     } catch(e) {}
   }
