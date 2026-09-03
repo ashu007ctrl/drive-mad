@@ -352,11 +352,16 @@ class PhysicsWorld {
         car.rotAccum = 0;
       }
 
+      // Auto-leveling gyro stabilization in mid-air (Drive Mad feel)
+      car.angVel += (-car.angle * 4.0 - car.angVel * 2.5) * dt;
+
       // Air pitch control for stunts and smooth ramp landing
       if (isBackward && !isForward) {
-        car.angVel += 7.5 * dt; // pitch back
+        car.angVel += 4.0 * dt; // pitch back
       } else if (isForward && !isBackward) {
-        car.angVel -= 7.5 * dt; // pitch forward
+        if (car.angle > -0.2) {
+          car.angVel -= 2.0 * dt; // gentle forward tilt
+        }
       }
     } else {
       // Landing detection
@@ -512,9 +517,21 @@ class PhysicsWorld {
     const headWorld = car.pos.add(headLocal.rot(car.angle));
     let crashed = false;
 
+    // Crash detection (Driver head touches ground when flipped or penetrates surface)
+    const isFlipped = Math.cos(car.angle) < 0.25; // vehicle flipped > 75 degrees
     surfaces.forEach(line => {
       const hit = this._raycastWheel(headWorld, cfg.headRadius, line);
-      if (hit) crashed = true;
+      if (hit) {
+        if (isFlipped) {
+          crashed = true;
+        } else {
+          // If upright, head must actually penetrate behind the surface plane
+          const toHead = headWorld.sub(hit.point);
+          if (toHead.dot(hit.normal) < -0.05) {
+            crashed = true;
+          }
+        }
+      }
     });
 
     // Check spinner blades hitting car or driver head

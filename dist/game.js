@@ -503,6 +503,25 @@ class DriveMadGame {
       }
     }
 
+    // Bounce spring pad effects
+    if (car.bounceTime > 0) {
+      if (Math.random() < 0.4) {
+        this._playSFX('bounce');
+      }
+      for (let i = 0; i < 2; i++) {
+        this.particles.push({
+          x: car.pos.x + (Math.random() - 0.5) * 1.0,
+          y: car.pos.y - 0.5 + (Math.random() - 0.5) * 0.2,
+          vx: (Math.random() - 0.5) * 4,
+          vy: -3 - Math.random() * 4,
+          life: 0.35,
+          maxLife: 0.35,
+          color: ['#ff9100', '#ffd600', '#ff6d00', '#ffffff'][Math.floor(Math.random() * 4)],
+          size: 0.18 + Math.random() * 0.2
+        });
+      }
+    }
+
     // Crash Check
     if (result && result.crashed) {
       this._onCrash();
@@ -1545,6 +1564,19 @@ class DriveMadGame {
         gain.connect(dest);
         osc.start(t);
         osc.stop(t + 0.4);
+      } else if (type === 'bounce') {
+        // High bouncy spring boing
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(140, t);
+        osc.frequency.exponentialRampToValueAtTime(540, t + 0.22);
+        gain.gain.setValueAtTime(0.25, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(t);
+        osc.stop(t + 0.3);
       } else if (type === 'stunt') {
         // High sparkle bell
         const osc = ctx.createOscillator();
