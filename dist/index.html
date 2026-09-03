@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Drive Mad</title>
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="Drive Mad Pro - Physics-based racing game with 50 intense levels, stunts, air rotation, dynamic suspension, and turbo tracks!">
+  <title>Drive Mad Pro</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
     *  { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
     html,body { width:100%; height:100%; overflow:hidden; background:#1a1a2e;
-                font-family:'Nunito',sans-serif; touch-action:none; }
+                font-family:'Nunito',sans-serif; touch-action:none; -webkit-user-select:none; user-select:none; }
 
     #game-canvas { display:block; width:100%; height:100%; touch-action:none; }
 
@@ -26,6 +28,9 @@
     .logo        { font-size:clamp(36px,8vw,72px); font-weight:900; color:#fff;
                    letter-spacing:-2px; text-shadow:0 0 30px rgba(100,180,255,.6); }
     .logo span   { color:#ff6b35; }
+    .logo .badge { font-size:clamp(12px,2.2vw,18px); background:linear-gradient(135deg,#ff6b35,#ffd700);
+                   color:#111; padding:2px 8px; border-radius:8px; font-weight:900; vertical-align:middle;
+                   margin-left:8px; text-shadow:none; letter-spacing:1px; display:inline-block; }
     .subtitle    { font-size:clamp(11px,1.8vw,14px); color:rgba(255,255,255,.45);
                    letter-spacing:4px; text-transform:uppercase; margin-top:2px; }
     #level-select { margin-top:22px; display:grid; grid-template-columns:repeat(5,1fr);
@@ -36,6 +41,9 @@
     @media(max-width:480px){
       #level-select{ grid-template-columns:repeat(5,1fr); gap:5px; max-height:58vh; }
     }
+    @media(max-width:360px){
+      #level-select{ grid-template-columns:repeat(4,1fr); gap:4px; }
+    }
     .lvl-btn { background:rgba(255,255,255,.07); border:2px solid rgba(255,255,255,.12);
                border-radius:12px; padding:8px 0 6px; cursor:pointer; transition:all .18s;
                display:flex; flex-direction:column; align-items:center; gap:2px; color:#fff; }
@@ -44,35 +52,113 @@
     .lvl-btn .stars{ font-size:8px; color:#ffd700; letter-spacing:-1px; }
     .lvl-btn.locked   { opacity:.25; cursor:not-allowed; pointer-events:none; }
     .lvl-btn.completed .num { color:#4cde80; }
-    .play-hint { margin-top:14px; font-size:11px; color:rgba(255,255,255,.3);
-                 letter-spacing:1px; text-align:center; padding:0 20px; }
+    .play-hint { margin-top:14px; font-size:11px; color:rgba(255,255,255,.45);
+                 letter-spacing:1px; text-align:center; padding:0 20px; font-weight:700; }
 
-    /* HUD */
+    /* ══════════════════════════════════════════════════════════════
+       HUD STYLES — Ultra Crisp Across All Day & Night Themes
+       ══════════════════════════════════════════════════════════════ */
     #hud { position:fixed; top:0; left:0; right:0; display:flex;
-           justify-content:space-between; align-items:center;
-           padding:max(env(safe-area-inset-top),10px) 12px 10px; pointer-events:none; z-index:50; }
-    .hud-pill { background:rgba(0,0,0,.4); backdrop-filter:blur(10px); border-radius:100px;
-                padding:7px 15px; color:#fff; font-size:13px; font-weight:700;
-                display:flex; align-items:center; gap:6px; pointer-events:auto; }
-    #btn-restart-hud { cursor:pointer; background:rgba(255,107,53,.8); }
+           justify-content:space-between; align-items:flex-start;
+           padding:max(env(safe-area-inset-top),8px) max(env(safe-area-inset-right),12px) 6px max(env(safe-area-inset-left),12px);
+           pointer-events:none; z-index:50; gap:8px; }
+
+    .hud-group { display:flex; align-items:center; gap:6px; flex-wrap:nowrap; }
+
+    .hud-pill { background:rgba(15,23,42,.85); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+                border-radius:100px; border:1px solid rgba(255,255,255,.18);
+                padding:6px 12px; color:#fff; font-size:13px; font-weight:700;
+                display:flex; align-items:center; gap:5px; pointer-events:auto;
+                white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,.35); }
+
+    /* HIGH-CONTRAST SPEEDOMETER PILL (Vividly readable in sky, desert, sunset, candy & night!) */
+    .hud-speedo {
+      background:rgba(15,23,42,.92);
+      border:1.5px solid #ff9800;
+      color:#fff;
+      font-weight:800;
+      box-shadow:0 4px 16px rgba(0,0,0,.45), 0 0 10px rgba(255,152,0,.25);
+    }
+    .hud-speedo .speedo-icon {
+      color:#ffb703;
+      filter:drop-shadow(0 0 4px rgba(255,183,3,.8));
+    }
+    .hud-speedo #hud-speed-val {
+      color:#ffd60a;
+      font-size:1.18em;
+      font-weight:900;
+      text-shadow:0 1px 4px rgba(0,0,0,.95), 0 0 10px rgba(255,214,10,.6);
+      margin-right:2px;
+      min-width:18px;
+      text-align:right;
+    }
+    .hud-speedo .speedo-unit {
+      color:rgba(255,255,255,.75);
+      font-size:0.85em;
+      font-weight:800;
+      letter-spacing:0.5px;
+    }
+    .hud-speedo.boosted {
+      background:rgba(2,18,44,.95);
+      border-color:#00e5ff;
+      box-shadow:0 0 20px rgba(0,229,255,.8);
+    }
+    .hud-speedo.boosted #hud-speed-val {
+      color:#00e5ff;
+      text-shadow:0 0 12px rgba(0,229,255,.9);
+    }
+
+    #hud-song-pill { background:rgba(30,27,75,.88); border-color:rgba(167,139,250,.45); color:#ede9fe; font-size:12px; }
+    .hud-btn-action { cursor:pointer; transition:transform .12s, background .15s; }
+    .hud-btn-action:hover { transform:scale(1.06); }
+    #btn-restart-hud { background:rgba(234,88,12,.88); border-color:#ea580c; }
     #btn-restart-hud:hover { background:#ff6b35; }
-    #btn-menu-hud { cursor:pointer; }
-    #btn-menu-hud:hover { background:rgba(255,255,255,.18); }
+    #btn-pause-hud:hover { background:rgba(255,255,255,.25); }
+    #btn-mute-hud:hover { background:rgba(255,255,255,.25); }
+    #btn-menu-hud:hover { background:rgba(255,255,255,.25); }
+
+    /* ══════════════════════════════════════════════════════════════
+       MOBILE RESPONSIVENESS (< 768px): Sleek, Uncluttered Top Bar
+       ══════════════════════════════════════════════════════════════ */
+    @media(max-width:768px){
+      #hud { padding:max(env(safe-area-inset-top),6px) max(env(safe-area-inset-right),8px) 4px max(env(safe-area-inset-left),8px); gap:4px; }
+      .hud-pill { padding:5px 9px; font-size:11px; gap:4px; }
+      .hud-btn-text { display:none; } /* Hide text on mobile so buttons become compact touch pills */
+      .hud-btn-action { padding:5px 8px; font-size:13px; border-radius:50%; width:32px; height:32px; justify-content:center; }
+      #hud-song-pill { max-width:115px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    }
+    @media(max-width:440px){
+      .hud-pill { padding:4px 7px; font-size:10px; }
+      #hud-song-pill { display:none; } /* Save maximum screen space on narrow phones */
+      .hud-btn-action { width:28px; height:28px; font-size:12px; }
+    }
 
     /* Progress bar */
     #progress-bar-wrap { position:fixed; top:52px; left:50%; transform:translateX(-50%);
-                         width:min(280px,65vw); height:7px; background:rgba(0,0,0,.3);
-                         border-radius:100px; z-index:50; overflow:hidden; }
+                         width:min(260px,55vw); height:6px; background:rgba(0,0,0,.45);
+                         border:1px solid rgba(255,255,255,.15); border-radius:100px; z-index:50; overflow:hidden; }
     #progress-bar-fill { height:100%; background:linear-gradient(90deg,#ff6b35,#ffd700);
                          border-radius:100px; width:0%; transition:width .08s; }
+    @media(max-width:768px){
+      #progress-bar-wrap { top:44px; height:4px; width:min(180px,45vw); }
+    }
+
+    /* Stunt floating toast */
+    #stunt-toast { position:fixed; top:72px; left:50%; transform:translateX(-50%) scale(0.8);
+                   background:linear-gradient(135deg,#ff6b35,#ffd700); color:#111;
+                   padding:8px 22px; border-radius:50px; font-weight:900; font-size:clamp(14px,3vw,20px);
+                   letter-spacing:1px; z-index:60; pointer-events:none; opacity:0;
+                   transition:all .25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                   box-shadow:0 8px 24px rgba(255,107,53,.6); }
+    #stunt-toast.show { opacity:1; transform:translateX(-50%) scale(1.05); }
 
     /* Overlay screens */
     .modal-overlay { position:fixed; inset:0; display:flex; flex-direction:column;
                      align-items:center; justify-content:center; z-index:80; pointer-events:none; }
     .modal-overlay.active { pointer-events:auto; }
-    #screen-crash { background:rgba(200,20,20,.55); backdrop-filter:blur(10px); }
-    #screen-win   { background:rgba(10,160,100,.5);  backdrop-filter:blur(10px); }
-    #screen-pause { background:rgba(15,23,42,.7);    backdrop-filter:blur(10px); }
+    #screen-crash { background:rgba(200,20,20,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+    #screen-win   { background:rgba(10,160,100,.55); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+    #screen-pause { background:rgba(15,23,42,.75);   backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
     .overlay-emoji { font-size:clamp(52px,11vw,96px); }
     .overlay-title { font-size:clamp(28px,7vw,58px); font-weight:900; color:#fff;
                      margin-top:8px; text-shadow:0 2px 12px rgba(0,0,0,.35); }
@@ -84,56 +170,108 @@
     .btn-primary   { background:#ff6b35; }
     .btn-secondary { background:rgba(255,255,255,.18); border:2px solid rgba(255,255,255,.4); }
 
-    /* On-screen controls (Left = Backward/Lean, Right = Forward/Drive) */
+    /* ══════════════════════════════════════════════════════════════
+       ON-SCREEN CONTROLS: Left = BACK/LEAN | Right = BRAKE and GAS Side-by-Side
+       ══════════════════════════════════════════════════════════════ */
     #on-screen-controls { position:fixed; bottom:0; left:0; right:0;
                           display:none; justify-content:space-between; align-items:flex-end;
-                          padding:0 24px max(env(safe-area-inset-bottom),24px);
+                          padding:0 max(env(safe-area-inset-right),18px) max(env(safe-area-inset-bottom),16px) max(env(safe-area-inset-left),18px);
                           z-index:50; pointer-events:none; }
-    .ctrl-side { display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:auto; }
-    .ctrl-btn { width:clamp(76px,18vw,96px); height:clamp(76px,18vw,96px);
-                border-radius:24px; background:rgba(15,23,42,.65); backdrop-filter:blur(14px);
-                border:2px solid rgba(255,255,255,.2); font-size:clamp(28px,7vw,38px);
-                display:flex; justify-content:center; align-items:center;
-                user-select:none; touch-action:none; cursor:pointer;
-                transition:all .1s cubic-bezier(0.4, 0, 0.2, 1); color:#fff;
-                box-shadow:0 8px 24px rgba(0,0,0,.3); }
-    .ctrl-btn:hover { border-color:rgba(255,255,255,.4); }
-    .ctrl-btn:active,.ctrl-btn.pressed { background:rgba(255,107,53,.8); border-color:#ff6b35;
-                                        transform:scale(.92); box-shadow:0 0 20px rgba(255,107,53,.6); }
-    .ctrl-btn-fwd { background:rgba(255,107,53,.35); border-color:rgba(255,107,53,.6); }
-    .ctrl-lbl { font-size:11px; font-weight:800; color:rgba(255,255,255,.4); letter-spacing:2px;
-                text-transform:uppercase; pointer-events:none; }
 
-    /* Mute Button */
+    /* Left Side (Back / Lean) */
+    .ctrl-side-left { display:flex; flex-direction:column; align-items:center; gap:5px; pointer-events:auto; }
+
+    /* Right Side: BRAKE and GAS side-by-side */
+    .ctrl-side-right { display:flex; flex-direction:row; align-items:flex-end; gap:12px; pointer-events:auto; }
+    .ctrl-item { display:flex; flex-direction:column; align-items:center; gap:5px; }
+
+    .ctrl-btn { width:clamp(68px,16vw,92px); height:clamp(68px,16vw,92px);
+                border-radius:22px; background:rgba(15,23,42,.75); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+                border:2px solid rgba(255,255,255,.2); font-size:clamp(24px,5.5vw,34px);
+                display:flex; justify-content:center; align-items:center;
+                user-select:none; -webkit-user-select:none; touch-action:none; cursor:pointer;
+                transition:all .1s cubic-bezier(0.4, 0, 0.2, 1); color:#fff;
+                box-shadow:0 8px 24px rgba(0,0,0,.4); }
+    .ctrl-btn:hover { border-color:rgba(255,255,255,.5); }
+    .ctrl-btn:active,.ctrl-btn.pressed { transform:scale(.92); }
+
+    /* Left (Back/Lean) Button */
+    .ctrl-btn-back { background:rgba(30,58,138,.55); border-color:rgba(96,165,250,.5); }
+    .ctrl-btn-back:active,.ctrl-btn-back.pressed { background:rgba(59,130,246,.9); border-color:#93c5fd;
+                                                  box-shadow:0 0 22px rgba(59,130,246,.8); }
+
+    /* Brake Button */
+    .ctrl-btn-brake { background:rgba(185,28,28,.6); border-color:rgba(248,113,113,.65); }
+    .ctrl-btn-brake:active,.ctrl-btn-brake.pressed { background:rgba(239,68,68,.95); border-color:#fca5a5;
+                                                     box-shadow:0 0 24px rgba(239,68,68,.85); }
+
+    /* Gas Button */
+    .ctrl-btn-fwd { background:rgba(194,65,12,.6); border-color:rgba(251,146,60,.65); }
+    .ctrl-btn-fwd:active,.ctrl-btn-fwd.pressed { background:rgba(249,115,22,.95); border-color:#fdba74;
+                                                box-shadow:0 0 24px rgba(249,115,22,.85); }
+
+    .ctrl-lbl { font-size:10px; font-weight:900; color:rgba(255,255,255,.6); letter-spacing:1.5px;
+                text-transform:uppercase; pointer-events:none; text-shadow:0 1px 3px rgba(0,0,0,.8); }
+
+    /* Mobile control fine-tuning */
+    @media(max-width:600px){
+      #on-screen-controls { padding:0 max(env(safe-area-inset-right),10px) max(env(safe-area-inset-bottom),10px) max(env(safe-area-inset-left),10px); }
+      .ctrl-side-right { gap:8px; }
+      .ctrl-btn { width:clamp(56px,16vw,74px); height:clamp(56px,16vw,74px);
+                  border-radius:18px; font-size:clamp(20px,5vw,28px); }
+      .ctrl-lbl { font-size:8px; letter-spacing:1px; }
+    }
+    @media(max-width:360px){
+      .ctrl-side-right { gap:5px; }
+      .ctrl-btn { width:clamp(50px,15vw,64px); height:clamp(50px,15vw,64px);
+                  border-radius:15px; }
+    }
+
+    /* Landscape hint for very small portrait screens */
+    #landscape-hint { display:none; position:fixed; inset:0; background:rgba(15,12,41,.95);
+                      z-index:300; flex-direction:column; align-items:center; justify-content:center;
+                      color:#fff; font-size:18px; font-weight:700; gap:12px; }
+    #landscape-hint .hint-icon { font-size:48px; animation:rotate-hint 2s ease-in-out infinite; }
+    @keyframes rotate-hint { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(90deg)} }
+    @media(max-width:480px) and (orientation:portrait) and (max-height:500px){
+      #landscape-hint { display:flex; }
+    }
+
+    /* Menu Mute Button */
     .mute-btn { position:fixed; bottom:24px; right:24px; width:52px; height:52px;
                 border-radius:50%; background:rgba(255,255,255,.12); backdrop-filter:blur(10px);
                 border:2px solid rgba(255,255,255,.2); display:flex; align-items:center;
                 justify-content:center; font-size:24px; cursor:pointer; z-index:200;
                 transition:all .15s; user-select:none; }
     .mute-btn:hover { background:rgba(255,107,53,.4); border-color:#ff6b35; transform:scale(1.1); }
-    #btn-pause-hud { cursor:pointer; }
-    #btn-pause-hud:hover { background:rgba(255,255,255,.2); }
-    #btn-mute-hud { cursor:pointer; }
-    #btn-mute-hud:hover { background:rgba(255,107,53,.6); }
   </style>
 </head>
 <body>
 
+<!-- LANDSCAPE HINT -->
+<div id="landscape-hint">
+  <div class="hint-icon">📱</div>
+  <div>Rotate to Landscape for best experience!</div>
+</div>
+
 <!-- MENU SCREEN -->
 <div id="screen-menu" class="screen">
-  <div class="logo">Drive<span>Mad</span></div>
-  <div class="subtitle">Physics Racing</div>
+  <div class="logo">Drive<span>Mad</span><span class="badge">PRO</span></div>
+  <div class="subtitle">Physics Stunt Racing</div>
   <div id="level-select"></div>
-  <div class="play-hint">Tap a level · Arrow Keys or On-Screen Buttons to drive</div>
+  <div class="play-hint">Arrow Keys / A,D,Space · Air Rotation & Flips · Brake to Survive!</div>
 </div>
+
+<!-- STUNT TOAST -->
+<div id="stunt-toast">★ BACKFLIP! +500 ★</div>
 
 <!-- CRASH SCREEN -->
 <div id="screen-crash" class="modal-overlay">
   <div class="overlay-emoji">💥</div>
   <div class="overlay-title">You Crashed!</div>
-  <div class="overlay-sub">Don't let your head touch the ground!</div>
+  <div class="overlay-sub">Don't let your head touch the ground! Use Brake to control speed!</div>
   <div class="overlay-btns">
-    <button class="btn-big btn-primary" id="btn-crash-retry">Try Again</button>
+    <button class="btn-big btn-primary" id="btn-crash-retry">Try Again (R)</button>
     <button class="btn-big btn-secondary" id="btn-crash-menu">Menu</button>
   </div>
 </div>
@@ -163,35 +301,66 @@
 
 <!-- HUD -->
 <div id="hud" style="display:none">
-  <div class="hud-pill">🎮 <span id="hud-level-name">Level 1</span></div>
-  <div class="hud-pill">⏱ <span id="hud-timer">0.00s</span></div>
-  <div class="hud-pill" id="btn-pause-hud"   onclick="game.togglePause()">⏸ Pause</div>
-  <div class="hud-pill" id="btn-restart-hud" onclick="game.restartLevel()">🔄 Restart</div>
-  <div class="hud-pill" id="btn-mute-hud"    onclick="game.toggleMute()">🔊 Music</div>
-  <div class="hud-pill" id="btn-menu-hud"    onclick="game.goToMenu()">🏠 Menu</div>
+  <!-- Left info cluster (Level, Timer, High-Contrast Speedometer) -->
+  <div class="hud-group hud-left">
+    <div class="hud-pill">🎮 <span id="hud-level-name">Level 1</span></div>
+    <div class="hud-pill">⏱ <span id="hud-timer">0.00s</span></div>
+    <div class="hud-pill hud-speedo" id="hud-speed-pill">
+      <span class="speedo-icon">⚡</span>
+      <span id="hud-speed-val">0</span>
+      <span class="speedo-unit">km/h</span>
+    </div>
+  </div>
+
+  <!-- Right action cluster (Song pill, Pause, Restart, Mute, Menu) -->
+  <div class="hud-group hud-right">
+    <div class="hud-pill" id="hud-song-pill">🎵 <span id="hud-song-name">Track 1</span></div>
+    <div class="hud-pill hud-btn-action" id="btn-pause-hud" onclick="game.togglePause()" title="Pause (P)">
+      <span>⏸</span><span class="hud-btn-text"> Pause</span>
+    </div>
+    <div class="hud-pill hud-btn-action" id="btn-restart-hud" onclick="game.restartLevel()" title="Restart (R)">
+      <span>🔄</span><span class="hud-btn-text"> Restart</span>
+    </div>
+    <div class="hud-pill hud-btn-action" id="btn-mute-hud" onclick="game.toggleMute()" title="Music (M)">
+      <span id="btn-mute-icon">🔊</span><span class="hud-btn-text"> Music</span>
+    </div>
+    <div class="hud-pill hud-btn-action" id="btn-menu-hud" onclick="game.goToMenu()" title="Menu">
+      <span>🏠</span><span class="hud-btn-text"> Menu</span>
+    </div>
+  </div>
 </div>
 <div id="progress-bar-wrap" style="display:none"><div id="progress-bar-fill"></div></div>
 
-<!-- On-Screen Controls (Left = Backward, Right = Forward) -->
+<!-- ON-SCREEN CONTROLS: Left = BACK/LEAN | Right = BRAKE and GAS Side-by-Side -->
 <div id="on-screen-controls">
-  <!-- LEFT SIDE: Backward / Lean Back -->
-  <div class="ctrl-side">
-    <div class="ctrl-btn" id="ctrl-left"
+  <!-- LEFT SIDE: Backward / Lean Back (Left Thumb) -->
+  <div class="ctrl-side-left">
+    <div class="ctrl-btn ctrl-btn-back" id="ctrl-left"
          onpointerdown="game._ctrlPress('left')"
          onpointerup="game._ctrlRelease('left')"
          onpointerleave="game._ctrlRelease('left')"
          onpointercancel="game._ctrlRelease('left')">◀</div>
-    <div class="ctrl-lbl">BACKWARD</div>
+    <div class="ctrl-lbl">BACK</div>
   </div>
 
-  <!-- RIGHT SIDE: Forward / Drive -->
-  <div class="ctrl-side">
-    <div class="ctrl-btn ctrl-btn-fwd" id="ctrl-right"
-         onpointerdown="game._ctrlPress('right')"
-         onpointerup="game._ctrlRelease('right')"
-         onpointerleave="game._ctrlRelease('right')"
-         onpointercancel="game._ctrlRelease('right')">▶</div>
-    <div class="ctrl-lbl">FORWARD</div>
+  <!-- RIGHT SIDE: Brake and Gas Side-by-Side (Right Thumb) -->
+  <div class="ctrl-side-right">
+    <div class="ctrl-item">
+      <div class="ctrl-btn ctrl-btn-brake" id="ctrl-brake"
+           onpointerdown="game._ctrlPress('brake')"
+           onpointerup="game._ctrlRelease('brake')"
+           onpointerleave="game._ctrlRelease('brake')"
+           onpointercancel="game._ctrlRelease('brake')">🛑</div>
+      <div class="ctrl-lbl">BRAKE</div>
+    </div>
+    <div class="ctrl-item">
+      <div class="ctrl-btn ctrl-btn-fwd" id="ctrl-right"
+           onpointerdown="game._ctrlPress('right')"
+           onpointerup="game._ctrlRelease('right')"
+           onpointerleave="game._ctrlRelease('right')"
+           onpointercancel="game._ctrlRelease('right')">▶</div>
+      <div class="ctrl-lbl">GAS</div>
+    </div>
   </div>
 </div>
 
@@ -202,10 +371,10 @@
 <script src="game.js"></script>
 
 <script>
-  // Prevent all touch defaults to stop scroll/zoom during gameplay
+  // Prevent default gestures that interfere with racing gameplay
   document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
   document.addEventListener('touchstart', e => {
-    if (e.target.closest('#on-screen-controls, #hud')) return;
+    if (e.target.closest('#on-screen-controls, #hud, .screen, .modal-overlay')) return;
     if (window.game && window.game.state === 'PLAYING') e.preventDefault();
   }, { passive: false });
 </script>

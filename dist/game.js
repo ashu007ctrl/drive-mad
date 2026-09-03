@@ -1,12 +1,14 @@
 /**
- * DRIVE MAD — Game Controller & Canvas 2D Engine
+ * DRIVE MAD PRO — Game Controller & Canvas 2D Engine
  * Features:
  * - 50 Levels with progression & local storage records
- * - Parallax backgrounds & themes (sky, sunset, forest, desert, night, storm, candy, space)
- * - Rich particle effects (dust, exhaust smoke, crash debris, win confetti)
- * - Authentic Drive Mad style car & suspension animations
- * - Moving platforms, hazard spinners, see-saws, bridge mechanics
- * - Responsive mobile on-screen controls & keyboard input
+ * - 3 Dynamic Procedural Music Tracks with adjacent-level rotation
+ * - Full Web Audio SFX (win fanfare, crash explosion, brake screech, turbo boost, stunt chimes)
+ * - Pro Visuals: Mechanical suspension springs, volumetric headlights, dual-color nitro flames, blinking duck driver
+ * - Voxel 3D-depth terrain rendering with animated Turbo Boost and Bounce pads
+ * - In-air rotation controls & 360-degree flip / stunt detection with live popups
+ * - Live HUD speedometer (km/h) with boost glow indicator
+ * - Ergonomic side-by-side on-screen Brake & Gas controls + keyboard controls
  */
 
 class DriveMadGame {
@@ -14,23 +16,27 @@ class DriveMadGame {
     this.canvas = document.getElementById('game-canvas');
     this.ctx = this.canvas.getContext('2d');
 
-    this.keys = { up: false, down: false, left: false, right: false, brake: false };
-    this.state = 'MENU'; // 'MENU' | 'PLAYING' | 'CRASHED' | 'WIN'
+    this.keys = { up: false, down: false, left: false, right: false, brake: false, forward: false, backward: false };
+    this.state = 'MENU'; // 'MENU' | 'PLAYING' | 'CRASHED' | 'WIN' | 'PAUSED'
 
     this.currentLevelIndex = 0;
     this.physics = null;
     this.startTime = 0;
     this.elapsed = 0;
 
-    // Camera
+    // Camera & Screen Shake
     this.camX = 0;
     this.camY = 0;
+    this.screenShake = 0;
 
     // Particles & Animations
     this.particles = [];
     this.confetti = [];
     this.clouds = [];
     this.flagWave = 0;
+    this.boostAnim = 0;
+    this._stuntToastTimer = null;
+    this._lastBrakeSoundTime = 0;
 
     // Progress in LocalStorage
     this.progress = JSON.parse(localStorage.getItem('drivemad_progress_v2') || '{}');
@@ -38,6 +44,7 @@ class DriveMadGame {
     // Audio System
     this._musicStarted = false;
     this._musicMuted = localStorage.getItem('drivemad_muted') === 'true';
+    this._currentSongIndex = -1;
     this._initAudio();
 
     this._initClouds();
@@ -69,7 +76,12 @@ class DriveMadGame {
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
     // World unit scale: responsive for mobile and desktop
-    this.PPU = Math.min(window.innerWidth / 16, window.innerHeight / 9.5);
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      this.PPU = Math.min(window.innerWidth / 12, window.innerHeight / 7.5);
+    } else {
+      this.PPU = Math.min(window.innerWidth / 16, window.innerHeight / 9.5);
+    }
   }
 
   _bindInput() {
@@ -94,6 +106,11 @@ class DriveMadGame {
         this.keys.left = true;
         this.keys.backward = true;
         document.getElementById('ctrl-left')?.classList.add('pressed');
+      }
+      if (e.key === ' ' || e.key === 'b' || e.key === 'B' || e.key === 'Shift') {
+        e.preventDefault();
+        this.keys.brake = true;
+        document.getElementById('ctrl-brake')?.classList.add('pressed');
       }
       if ((e.key === 'r' || e.key === 'R') && (this.state === 'PLAYING' || this.state === 'CRASHED' || this.state === 'PAUSED')) {
         this.restartLevel();
@@ -124,6 +141,10 @@ class DriveMadGame {
         this.keys.backward = false;
         document.getElementById('ctrl-left')?.classList.remove('pressed');
       }
+      if (e.key === ' ' || e.key === 'b' || e.key === 'B' || e.key === 'Shift') {
+        this.keys.brake = false;
+        document.getElementById('ctrl-brake')?.classList.remove('pressed');
+      }
     });
 
     // Global fail-safe release on any pointer/touch release or blur
@@ -133,6 +154,9 @@ class DriveMadGame {
   }
 
   _ctrlPress(key) {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(15); } catch(e) {}
+    }
     if (key === 'right' || key === 'forward' || key === 'up') {
       this.keys.right = true;
       this.keys.forward = true;
@@ -141,6 +165,9 @@ class DriveMadGame {
       this.keys.left = true;
       this.keys.backward = true;
       document.getElementById('ctrl-left')?.classList.add('pressed');
+    } else if (key === 'brake') {
+      this.keys.brake = true;
+      document.getElementById('ctrl-brake')?.classList.add('pressed');
     }
   }
 
@@ -153,6 +180,9 @@ class DriveMadGame {
       this.keys.left = false;
       this.keys.backward = false;
       document.getElementById('ctrl-left')?.classList.remove('pressed');
+    } else if (key === 'brake') {
+      this.keys.brake = false;
+      document.getElementById('ctrl-brake')?.classList.remove('pressed');
     }
   }
 
@@ -160,6 +190,7 @@ class DriveMadGame {
     this.keys = { up: false, down: false, left: false, right: false, forward: false, backward: false, brake: false };
     document.getElementById('ctrl-left')?.classList.remove('pressed');
     document.getElementById('ctrl-right')?.classList.remove('pressed');
+    document.getElementById('ctrl-brake')?.classList.remove('pressed');
   }
 
   _buildMenu() {
@@ -213,6 +244,7 @@ class DriveMadGame {
 
     this.camX = lvl.spawnX;
     this.camY = lvl.spawnY + 1.5;
+    this.screenShake = 0;
 
     this.currentLevel = lvl;
     this.theme = THEMES[lvl.theme] || THEMES.sky;
@@ -222,6 +254,18 @@ class DriveMadGame {
     this.elapsed = 0;
     this.particles = [];
     this.confetti = [];
+
+    // Switch music: Adjacent levels always have different songs!
+    const newSong = this._getSongForLevel(index);
+    const songData = this._getSongData(newSong);
+    const songPill = document.getElementById('hud-song-name');
+    if (songPill) songPill.textContent = songData.song.title;
+
+    if (newSong !== this._currentSongIndex && this._musicStarted) {
+      this._restartMusicWithSong(newSong);
+    } else if (this._currentSongIndex === -1) {
+      this._currentSongIndex = newSong;
+    }
   }
 
   restartLevel() {
@@ -275,6 +319,17 @@ class DriveMadGame {
     }
   }
 
+  _showStuntToast(text) {
+    const toast = document.getElementById('stunt-toast');
+    if (!toast) return;
+    toast.textContent = text;
+    toast.classList.add('show');
+    if (this._stuntToastTimer) clearTimeout(this._stuntToastTimer);
+    this._stuntToastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 1800);
+  }
+
   _loop(ts) {
     const dt = Math.min((ts - this._lastTime) / 1000, 0.04);
     this._lastTime = ts;
@@ -282,18 +337,19 @@ class DriveMadGame {
     requestAnimationFrame(t => this._loop(t));
 
     if (this.state === 'PAUSED') {
-      this._draw();
+      this._draw(0);
       return;
     }
 
     this.flagWave += dt * 5;
+    this.boostAnim += dt * 8;
 
     if (this.state === 'PLAYING') {
       this._update(dt);
     }
 
     this._updateParticles(dt);
-    this._draw();
+    this._draw(dt);
   }
 
   _update(dt) {
@@ -303,31 +359,115 @@ class DriveMadGame {
     this.elapsed = (performance.now() - this.startTime) / 1000;
     document.getElementById('hud-timer').textContent = `${this.elapsed.toFixed(2)}s`;
 
+    // Speedometer calculation
+    const speedKmh = Math.round(car.vel.len() * 3.6);
+    const speedVal = document.getElementById('hud-speed-val');
+    if (speedVal) speedVal.textContent = speedKmh;
+    const speedPill = document.getElementById('hud-speed-pill');
+    if (speedPill) {
+      if (car.boostTime > 0 || speedKmh > 55) {
+        speedPill.classList.add('boosted');
+      } else {
+        speedPill.classList.remove('boosted');
+      }
+    }
+
+    // Stunt detection and floating banner
+    if (car.lastStunt) {
+      this._showStuntToast(car.lastStunt);
+      this._playSFX('stunt');
+      car.lastStunt = null;
+    }
+
+    // Landing screen shake
+    if (car.landingImpact && car.landingImpact > 5.5) {
+      this.screenShake = Math.min(0.9, car.landingImpact * 0.08);
+      car.landingImpact = 0;
+    }
+
     // Progress bar calculation
     const totalDist = this.currentLevel.finishX - this.currentLevel.spawnX;
     const currentDist = car.pos.x - this.currentLevel.spawnX;
     const prog = Math.max(0, Math.min(1, currentDist / totalDist));
     document.getElementById('progress-bar-fill').style.width = `${prog * 100}%`;
 
-    // Camera follow with lookahead
-    const targetX = car.pos.x + Math.max(-1, Math.min(3, car.vel.x * 0.15));
-    const targetY = car.pos.y + 1.8;
+    // Camera follow with lookahead and dynamic mobile framing
+    const isMobile = window.innerWidth < 768;
+    const targetX = car.pos.x + Math.max(-1, Math.min(3.5, car.vel.x * 0.16));
+    const targetY = car.pos.y + (isMobile ? 2.35 : 1.8);
     this.camX += (targetX - this.camX) * Math.min(1, dt * 6.5);
     this.camY += (targetY - this.camY) * Math.min(1, dt * 5);
 
-    // Tire dust & smoke particles
-    if (this.keys.up && car.wheels.some(w => w.contact)) {
+    // Tire dust & acceleration exhaust smoke
+    if (this.keys.forward && car.wheels.some(w => w.contact)) {
       const rearWheel = car.wheels[0].worldPos(car);
       if (Math.random() < 0.6) {
         this.particles.push({
-          x: rearWheel.x - 0.2,
+          x: rearWheel.x - 0.25,
           y: rearWheel.y,
-          vx: -1.5 - Math.random() * 2,
+          vx: -2 - Math.random() * 2,
           vy: 0.5 + Math.random() * 1.5,
           life: 0.45,
           maxLife: 0.45,
-          color: 'rgba(200, 200, 200, 0.5)',
+          color: 'rgba(210, 210, 210, 0.6)',
           size: 0.2 + Math.random() * 0.2
+        });
+      }
+    }
+
+    // Brake sparks & heavy tire screech smoke
+    if (this.keys.brake && car.wheels.some(w => w.contact) && car.vel.len() > 1.2) {
+      const now = performance.now();
+      if (now - this._lastBrakeSoundTime > 400) {
+        this._playSFX('brake');
+        this._lastBrakeSoundTime = now;
+      }
+      car.wheels.forEach(wheel => {
+        if (wheel.contact) {
+          const wPos = wheel.worldPos(car);
+          // Friction sparks
+          this.particles.push({
+            x: wPos.x,
+            y: wPos.y - 0.08,
+            vx: (Math.random() - 0.5) * 4 - car.vel.x * 0.25,
+            vy: 0.8 + Math.random() * 2.5,
+            life: 0.25 + Math.random() * 0.2,
+            maxLife: 0.45,
+            color: ['#ff4444', '#ff8800', '#ffd700', '#ffffff'][Math.floor(Math.random() * 4)],
+            size: 0.08 + Math.random() * 0.1
+          });
+          // Skid tire smoke
+          if (Math.random() < 0.4) {
+            this.particles.push({
+              x: wPos.x - 0.1,
+              y: wPos.y,
+              vx: (Math.random() - 0.5) * 1.5,
+              vy: 0.4 + Math.random() * 0.8,
+              life: 0.5,
+              maxLife: 0.5,
+              color: 'rgba(180, 180, 180, 0.45)',
+              size: 0.25 + Math.random() * 0.2
+            });
+          }
+        }
+      });
+    }
+
+    // Boost pad effects
+    if (car.boostTime > 0) {
+      if (Math.random() < 0.5) {
+        this._playSFX('boost');
+      }
+      for (let i = 0; i < 2; i++) {
+        this.particles.push({
+          x: car.pos.x - 1.2 + (Math.random() - 0.5) * 0.4,
+          y: car.pos.y - 0.2 + (Math.random() - 0.5) * 0.2,
+          vx: -8 - Math.random() * 6,
+          vy: (Math.random() - 0.5) * 3,
+          life: 0.35,
+          maxLife: 0.35,
+          color: ['#00e5ff', '#3d5afe', '#ffea00', '#ffffff'][Math.floor(Math.random() * 4)],
+          size: 0.18 + Math.random() * 0.2
         });
       }
     }
@@ -346,25 +486,27 @@ class DriveMadGame {
 
   _onCrash() {
     this.state = 'CRASHED';
+    this.screenShake = 1.3;
+    this._playSFX('crash');
     this._releaseAll();
     document.getElementById('hud').style.display = 'none';
     document.getElementById('progress-bar-wrap').style.display = 'none';
     document.getElementById('on-screen-controls').style.display = 'none';
 
-    // Spawn crash explosion particles
+    // Spawn rich crash debris & flame explosion
     const car = this.physics.car;
-    for (let i = 0; i < 35; i++) {
+    for (let i = 0; i < 45; i++) {
       const ang = Math.random() * Math.PI * 2;
-      const spd = 2 + Math.random() * 6;
+      const spd = 3 + Math.random() * 8;
       this.particles.push({
-        x: car.pos.x + (Math.random() - 0.5),
-        y: car.pos.y + (Math.random() - 0.5),
+        x: car.pos.x + (Math.random() - 0.5) * 1.2,
+        y: car.pos.y + (Math.random() - 0.5) * 0.8,
         vx: Math.cos(ang) * spd,
-        vy: Math.sin(ang) * spd,
-        life: 0.8 + Math.random() * 0.4,
-        maxLife: 1.2,
-        color: ['#ff6b35', '#ffd700', '#333', '#fff', '#e53935'][Math.floor(Math.random() * 5)],
-        size: 0.15 + Math.random() * 0.25
+        vy: Math.sin(ang) * spd + 2,
+        life: 0.8 + Math.random() * 0.6,
+        maxLife: 1.4,
+        color: ['#ff3d00', '#ff9100', '#ffd600', '#263238', '#ffffff'][Math.floor(Math.random() * 5)],
+        size: 0.16 + Math.random() * 0.3
       });
     }
 
@@ -374,6 +516,7 @@ class DriveMadGame {
   _onWin() {
     if (this.state === 'WIN') return;
     this.state = 'WIN';
+    this._playSFX('win');
     this._releaseAll();
 
     const prevBest = this.progress[this.currentLevelIndex]?.time || Infinity;
@@ -389,18 +532,18 @@ class DriveMadGame {
     document.getElementById('win-time-text').textContent = `Time: ${this.elapsed.toFixed(2)}s (Best: ${this.progress[this.currentLevelIndex].time.toFixed(2)}s)`;
 
     // Spawn win confetti fireworks
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < 85; i++) {
       const ang = Math.random() * Math.PI * 2;
-      const spd = 3 + Math.random() * 8;
+      const spd = 4 + Math.random() * 10;
       this.confetti.push({
         x: this.currentLevel.finishX,
         y: 4 + Math.random() * 3,
         vx: Math.cos(ang) * spd,
-        vy: Math.sin(ang) * spd + 3,
-        life: 1.5 + Math.random() * 1.5,
-        maxLife: 3,
-        color: ['#ff3366', '#33ccff', '#ffcc00', '#33ff66', '#cc33ff'][Math.floor(Math.random() * 5)],
-        size: 0.2 + Math.random() * 0.2
+        vy: Math.sin(ang) * spd + 4,
+        life: 1.6 + Math.random() * 1.6,
+        maxLife: 3.2,
+        color: ['#ff1744', '#00e5ff', '#ffd600', '#00e676', '#d500f9', '#ff9100'][Math.floor(Math.random() * 6)],
+        size: 0.22 + Math.random() * 0.25
       });
     }
 
@@ -427,7 +570,7 @@ class DriveMadGame {
     }
   }
 
-  _draw() {
+  _draw(dt) {
     const ctx = this.ctx;
     const W = this.canvas.width;
     const H = this.canvas.height;
@@ -447,8 +590,16 @@ class DriveMadGame {
       return;
     }
 
-    const cx = W / 2 - this.camX * PPU;
-    const cy = H / 2 + this.camY * PPU;
+    // Camera shake decay and calculation
+    let shakeX = 0, shakeY = 0;
+    if (this.screenShake > 0.005) {
+      shakeX = (Math.random() - 0.5) * this.screenShake * 28;
+      shakeY = (Math.random() - 0.5) * this.screenShake * 28;
+      this.screenShake *= Math.pow(0.86, dt * 60);
+    }
+
+    const cx = W / 2 - this.camX * PPU + shakeX;
+    const cy = H / 2 + this.camY * PPU + shakeY;
 
     const toScreen = (wx, wy) => ({
       x: cx + wx * PPU,
@@ -468,7 +619,7 @@ class DriveMadGame {
     // 3. Floating Clouds
     this._drawClouds(ctx, toScreen, PPU, theme);
 
-    // 4. Track Segments
+    // 4. Track Segments with 3D Voxel Extrusion
     this._drawTrack(ctx, toScreen, this.currentLevel, PPU, theme);
 
     // 5. Boxes
@@ -489,12 +640,32 @@ class DriveMadGame {
     // 10. Particles
     this._drawParticles(ctx, toScreen, PPU);
 
-    // 11. Car
+    // 11. Car with Suspensions, Headlight, and Nitro Exhaust
     if (this.physics && this.physics.car && this.state !== 'CRASHED') {
       this._drawCar(ctx, toScreen, PPU);
     }
 
     ctx.restore();
+
+    // 12. Speed Lines FX when speeding fast
+    if (this.physics && this.physics.car && this.physics.car.vel.len() > 11.5) {
+      this._drawSpeedLines(ctx, W, H, this.physics.car.vel.len());
+    }
+  }
+
+  _drawSpeedLines(ctx, W, H, speed) {
+    const numLines = Math.min(18, Math.round(speed * 0.8));
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < numLines; i++) {
+      const y = (i * (H / numLines) + performance.now() * 0.5) % H;
+      const len = 80 + (i % 5) * 30;
+      const x = (i % 2 === 0) ? W - len - Math.random() * 40 : Math.random() * 40;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + len, y);
+      ctx.stroke();
+    }
   }
 
   _drawMenuDecor(ctx, W, H) {
@@ -511,10 +682,10 @@ class DriveMadGame {
   }
 
   _drawStars(ctx, W, H) {
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 45; i++) {
       const sx = (i * 197.3) % W;
       const sy = (i * 113.7) % (H * 0.7);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
       ctx.fillRect(sx, sy, 2, 2);
     }
   }
@@ -566,6 +737,7 @@ class DriveMadGame {
 
   _drawTrack(ctx, toScreen, lvl, PPU, theme) {
     const groundColor = theme.ground || '#5d4037';
+    const sideDepth = PPU * 0.22; // 3D voxel extrusion depth
 
     (lvl.segments || []).forEach(seg => {
       if (seg.type === 'gap' || seg.type === 'see-saw' || seg.type === 'box' || seg.type === 'moving') return;
@@ -594,7 +766,7 @@ class DriveMadGame {
           ctx.stroke();
         }
 
-        // Suspension Posts & Ropes
+        // Suspension Posts & Cables
         [0, 1].forEach(side => {
           const wx = seg.x + side * seg.w;
           const p0 = toScreen(wx, seg.y);
@@ -606,6 +778,59 @@ class DriveMadGame {
           ctx.lineTo(p1.x, p1.y);
           ctx.stroke();
         });
+        return;
+      }
+
+      // TURBO BOOST PAD
+      if (seg.type === 'boost') {
+        const p0 = toScreen(seg.x, seg.y);
+        const p1 = toScreen(seg.x + seg.w, seg.y);
+        const w = seg.w * PPU;
+
+        // Glowing base
+        ctx.fillStyle = '#004d40';
+        ctx.fillRect(p0.x, p0.y, w, PPU * 0.4);
+        ctx.strokeStyle = '#00e5ff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(p0.x, p0.y, w, PPU * 0.4);
+
+        // Animated neon chevrons
+        const offset = (this.boostAnim * 20) % 24;
+        ctx.fillStyle = '#00e5ff';
+        for (let x = p0.x + offset - 20; x < p0.x + w; x += 24) {
+          if (x >= p0.x && x + 12 <= p0.x + w) {
+            ctx.beginPath();
+            ctx.moveTo(x, p0.y + 4);
+            ctx.lineTo(x + 10, p0.y + PPU * 0.2);
+            ctx.lineTo(x, p0.y + PPU * 0.4 - 4);
+            ctx.lineTo(x + 5, p0.y + PPU * 0.2);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+        return;
+      }
+
+      // BOUNCE SPRING PAD
+      if (seg.type === 'bounce') {
+        const p0 = toScreen(seg.x, seg.y);
+        const w = seg.w * PPU;
+        ctx.fillStyle = '#ff6f00';
+        ctx.fillRect(p0.x, p0.y, w, PPU * 0.35);
+        ctx.strokeStyle = '#ffd54f';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(p0.x, p0.y, w, PPU * 0.35);
+
+        // Coiled spring graphic
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < 4; i++) {
+          const sx = p0.x + (i + 1) * (w / 5);
+          ctx.moveTo(sx - 6, p0.y + PPU * 0.3);
+          ctx.lineTo(sx + 6, p0.y + PPU * 0.08);
+        }
+        ctx.stroke();
         return;
       }
 
@@ -638,7 +863,17 @@ class DriveMadGame {
 
       if (pts.length < 3) return;
 
-      // Dirt block
+      // 3D Voxel Depth Bevel (Side / Shadow Extrusion)
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y + sideDepth);
+      ctx.lineTo(pts[1].x, pts[1].y + sideDepth);
+      ctx.lineTo(pts[2].x, pts[2].y);
+      ctx.lineTo(pts[3].x, pts[3].y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Main Terrain Block
       ctx.fillStyle = groundColor;
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
@@ -647,8 +882,8 @@ class DriveMadGame {
       ctx.fill();
 
       // Top Asphalt Surface
-      ctx.strokeStyle = '#37474f';
-      ctx.lineWidth = PPU * 0.22;
+      ctx.strokeStyle = '#263238';
+      ctx.lineWidth = PPU * 0.24;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.beginPath();
@@ -656,10 +891,10 @@ class DriveMadGame {
       ctx.lineTo(pts[1].x, pts[1].y);
       ctx.stroke();
 
-      // Road Stripe
+      // Road Striping
       ctx.strokeStyle = '#ffd54f';
       ctx.lineWidth = PPU * 0.05;
-      ctx.setLineDash([PPU * 0.4, PPU * 0.3]);
+      ctx.setLineDash([PPU * 0.45, PPU * 0.35]);
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y + PPU * 0.04);
       ctx.lineTo(pts[1].x, pts[1].y + PPU * 0.04);
@@ -678,7 +913,6 @@ class DriveMadGame {
       ctx.fillStyle = bx.color || '#e53935';
       ctx.fillRect(tl.x, tl.y, w, h);
 
-      // Crate wood straps & border
       ctx.strokeStyle = 'rgba(0,0,0,0.35)';
       ctx.lineWidth = 2;
       ctx.strokeRect(tl.x, tl.y, w, h);
@@ -700,7 +934,6 @@ class DriveMadGame {
       const pb = toScreen(b.x, b.y);
       const pp = toScreen(ss.pivot.x, ss.pivot.y);
 
-      // Plank
       const thick = PPU * 0.22;
       const dx = pb.x - pa.x, dy = pb.y - pa.y;
       const len = Math.sqrt(dx * dx + dy * dy);
@@ -718,7 +951,6 @@ class DriveMadGame {
       ctx.fill();
       ctx.stroke();
 
-      // Pivot Triangle
       ctx.fillStyle = '#424242';
       ctx.beginPath();
       ctx.moveTo(pp.x, pp.y);
@@ -734,11 +966,9 @@ class DriveMadGame {
     this.physics.movingPlatforms.forEach(mp => {
       const s = mp.getSurface();
       const p0 = toScreen(s.a.x, s.a.y);
-      const p1 = toScreen(s.b.x, s.b.y);
       const w = (s.b.x - s.a.x) * PPU;
       const h = PPU * 0.5;
 
-      // Guide Rail
       const railStart = toScreen(mp.baseX - mp.range, mp.y);
       const railEnd = toScreen(mp.baseX + mp.range + mp.w, mp.y);
       ctx.strokeStyle = 'rgba(255,255,255,0.25)';
@@ -750,14 +980,12 @@ class DriveMadGame {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Metal Platform
       ctx.fillStyle = '#0288d1';
       ctx.strokeStyle = '#01579b';
       ctx.lineWidth = 2;
       ctx.fillRect(p0.x, p0.y, w, h);
       ctx.strokeRect(p0.x, p0.y, w, h);
 
-      // Warning hazard stripes
       ctx.fillStyle = '#ffd54f';
       for (let x = 4; x < w - 4; x += 14) {
         ctx.fillRect(p0.x + x, p0.y + 2, 6, h - 4);
@@ -775,7 +1003,6 @@ class DriveMadGame {
       ctx.translate(p.x, p.y);
       ctx.rotate(sp.angle);
 
-      // 4 Blades / Arms
       for (let i = 0; i < 4; i++) {
         ctx.save();
         ctx.rotate((i * Math.PI) / 2);
@@ -785,13 +1012,11 @@ class DriveMadGame {
         ctx.fillRect(-PPU * 0.12, 0, PPU * 0.24, r);
         ctx.strokeRect(-PPU * 0.12, 0, PPU * 0.24, r);
 
-        // Warning spikes / stripes
         ctx.fillStyle = '#fff';
         ctx.fillRect(-PPU * 0.08, r * 0.4, PPU * 0.16, r * 0.2);
         ctx.restore();
       }
 
-      // Central Hub
       ctx.fillStyle = '#212121';
       ctx.beginPath();
       ctx.arc(0, 0, PPU * 0.35, 0, Math.PI * 2);
@@ -802,14 +1027,13 @@ class DriveMadGame {
   }
 
   _drawFinish(ctx, toScreen, finishX, PPU) {
-    // Find the ground Y at the finish position by checking segments
-    let groundY = 2; // fallback
+    let groundY = 2;
     if (this.currentLevel && this.currentLevel.segments) {
       for (const seg of this.currentLevel.segments) {
         if (seg.type === 'gap' || seg.type === 'see-saw' || seg.type === 'box' || seg.type === 'moving') continue;
         const segEnd = seg.x + (seg.w || 0);
         if (finishX >= seg.x && finishX <= segEnd) {
-          if (seg.type === 'flat') {
+          if (seg.type === 'flat' || seg.type === 'boost' || seg.type === 'bounce') {
             groundY = seg.y;
           } else if (seg.type === 'ramp') {
             const t = (finishX - seg.x) / seg.w;
@@ -827,9 +1051,9 @@ class DriveMadGame {
     const base = toScreen(finishX, groundY);
     const top = toScreen(finishX, groundY + 4.5);
 
-    // Flagpole
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = PPU * 0.1;
+    // Neon Victory Arch Post
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = PPU * 0.12;
     ctx.beginPath();
     ctx.moveTo(base.x, base.y);
     ctx.lineTo(top.x, top.y);
@@ -882,6 +1106,54 @@ class DriveMadGame {
     const cPos = toScreen(car.pos.x, car.pos.y);
     const ang = -car.angle;
 
+    // ─── 1. Mechanical Suspension Springs (Drawn behind car body) ───
+    car.wheels.forEach(wheel => {
+      const wPos = wheel.worldPos(car);
+      const ws = toScreen(wPos.x, wPos.y);
+
+      // Chassis mount point
+      const chLocal = new Vec2(wheel.localOffset.x, -cfg.bodyHeight * 0.25);
+      const chWorld = car.pos.add(chLocal.rot(car.angle));
+      const cs = toScreen(chWorld.x, chWorld.y);
+
+      // Spring compression coils
+      ctx.save();
+      ctx.strokeStyle = '#e53935'; // Racing Red Coil
+      ctx.lineWidth = Math.max(2, PPU * 0.08);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      const dx = ws.x - cs.x;
+      const dy = ws.y - cs.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const nx = -dy / dist;
+      const ny = dx / dist;
+
+      // Chrome shock absorber center piston shaft
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = Math.max(3, PPU * 0.1);
+      ctx.beginPath();
+      ctx.moveTo(cs.x, cs.y);
+      ctx.lineTo(ws.x, ws.y);
+      ctx.stroke();
+
+      // Zigzag spring coil
+      ctx.strokeStyle = '#d32f2f';
+      ctx.lineWidth = Math.max(2, PPU * 0.06);
+      ctx.beginPath();
+      const coils = 6;
+      ctx.moveTo(cs.x, cs.y);
+      for (let i = 1; i < coils; i++) {
+        const t = i / coils;
+        const side = (i % 2 === 0 ? 1 : -1) * PPU * 0.14;
+        ctx.lineTo(cs.x + dx * t + nx * side, cs.y + dy * t + ny * side);
+      }
+      ctx.lineTo(ws.x, ws.y);
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    // ─── 2. Car Body & Driver ───
     ctx.save();
     ctx.translate(cPos.x, cPos.y);
     ctx.rotate(ang);
@@ -889,19 +1161,78 @@ class DriveMadGame {
     const bw = cfg.bodyWidth * PPU;
     const bh = cfg.bodyHeight * PPU;
 
+    // Volumetric Headlight Cone (Front beam)
+    const isDarkTheme = this.theme && (this.theme.stars || this.theme.bg1.includes('0d') || this.theme.bg1.includes('1a'));
+    const hlGrad = ctx.createLinearGradient(bw * 0.5, 0, bw * 0.5 + PPU * 4.5, 0);
+    hlGrad.addColorStop(0, 'rgba(255, 240, 180, 0.45)');
+    hlGrad.addColorStop(0.7, 'rgba(255, 240, 180, 0.15)');
+    hlGrad.addColorStop(1, 'rgba(255, 240, 180, 0)');
+    ctx.fillStyle = hlGrad;
+    ctx.beginPath();
+    ctx.moveTo(bw * 0.5, -bh * 0.2);
+    ctx.lineTo(bw * 0.5 + PPU * 4.5, -PPU * 1.5);
+    ctx.lineTo(bw * 0.5 + PPU * 4.5, PPU * 1.5);
+    ctx.lineTo(bw * 0.5, bh * 0.35);
+    ctx.closePath();
+    ctx.fill();
+
     // Body Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.beginPath();
     ctx.ellipse(0, bh * 0.5 + PPU * 0.1, bw * 0.55, PPU * 0.18, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    // Chrome Exhaust Pipe at Rear
+    ctx.fillStyle = '#9e9e9e';
+    ctx.fillRect(-bw * 0.52, bh * 0.1, PPU * 0.25, PPU * 0.12);
+
+    // Animated Nitro Flame when accelerating or boost active
+    if (this.keys.forward || (this.physics.car && this.physics.car.boostTime > 0)) {
+      const isMega = this.physics.car && this.physics.car.boostTime > 0;
+      const fLen = (isMega ? 1.6 : 0.8) + Math.random() * 0.4;
+      const fWidth = (isMega ? 0.35 : 0.2);
+
+      // Outer Orange Fire
+      ctx.fillStyle = '#ff6d00';
+      ctx.beginPath();
+      ctx.moveTo(-bw * 0.52, bh * 0.08);
+      ctx.lineTo(-bw * 0.52 - PPU * fLen, bh * 0.16);
+      ctx.lineTo(-bw * 0.52, bh * 0.24);
+      ctx.closePath();
+      ctx.fill();
+
+      // Inner Blue/Cyan Core
+      ctx.fillStyle = isMega ? '#00e5ff' : '#00b0ff';
+      ctx.beginPath();
+      ctx.moveTo(-bw * 0.52, bh * 0.11);
+      ctx.lineTo(-bw * 0.52 - PPU * fLen * 0.6, bh * 0.16);
+      ctx.lineTo(-bw * 0.52, bh * 0.21);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Brake Lights (glow intensely when braking)
+    if (this.keys.brake) {
+      const blGlow = 0.75 + Math.sin(performance.now() * 0.03) * 0.25;
+      ctx.fillStyle = `rgba(255, 30, 30, ${blGlow})`;
+      ctx.shadowColor = '#ff1744';
+      ctx.shadowBlur = PPU * 0.6;
+      ctx.beginPath();
+      ctx.arc(-bw / 2 - PPU * 0.05, 0, PPU * 0.14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(-bw / 2 - PPU * 0.05, bh * 0.25, PPU * 0.12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
 
     // Main Chassis
     ctx.fillStyle = cfg.bodyColor;
     this._roundRect(ctx, -bw / 2, -bh / 2, bw, bh, PPU * 0.16);
     ctx.fill();
 
-    // Body Gloss Highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    // Body Voxel Side Shading / Highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
     this._roundRect(ctx, -bw / 2 + PPU * 0.08, -bh / 2 + PPU * 0.05, bw * 0.85, bh * 0.35, PPU * 0.1);
     ctx.fill();
 
@@ -912,11 +1243,13 @@ class DriveMadGame {
     this._roundRect(ctx, rx - rw / 2, -bh / 2 - rh + PPU * 0.05, rw, rh, PPU * 0.14);
     ctx.fill();
 
-    // Windshield
+    // Windshield with Glint
     ctx.fillStyle = 'rgba(100, 200, 255, 0.65)';
     ctx.fillRect(rx + rw * 0.05, -bh / 2 - rh * 0.75 + PPU * 0.05, rw * 0.42, rh * 0.6);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.fillRect(rx + rw * 0.1, -bh / 2 - rh * 0.7 + PPU * 0.05, rw * 0.1, rh * 0.45);
 
-    // Duck / Driver Head with Inertia bob
+    // Duck / Driver Head with Inertia bob & Eye Blinking
     const hx = cfg.headOffset.x * PPU;
     const hy = -cfg.headOffset.y * PPU + Math.sin(performance.now() * 0.015) * 1.5;
     const hr = cfg.headRadius * PPU;
@@ -933,19 +1266,29 @@ class DriveMadGame {
     ctx.ellipse(hx + hr * 0.7, hy + hr * 0.2, hr * 0.5, hr * 0.25, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Eye
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(hx + hr * 0.25, hy - hr * 0.15, hr * 0.25, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#111';
-    ctx.beginPath();
-    ctx.arc(hx + hr * 0.32, hy - hr * 0.15, hr * 0.12, 0, Math.PI * 2);
-    ctx.fill();
+    // Eye (Blinks every ~3.5 seconds)
+    const isBlinking = (Math.floor(performance.now() * 0.001) % 4 === 0) && (Math.sin(performance.now() * 0.01) > 0.85);
+    if (!isBlinking) {
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(hx + hr * 0.25, hy - hr * 0.15, hr * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.arc(hx + hr * 0.32, hy - hr * 0.15, hr * 0.12, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(hx + hr * 0.12, hy - hr * 0.15);
+      ctx.lineTo(hx + hr * 0.4, hy - hr * 0.15);
+      ctx.stroke();
+    }
 
     ctx.restore();
 
-    // Wheels with Suspensions & Spokes
+    // ─── 3. Wheels with Chunky Tires, Spokes & Calipers ───
     car.wheels.forEach(wheel => {
       const wPos = wheel.worldPos(car);
       const ws = toScreen(wPos.x, wPos.y);
@@ -988,7 +1331,7 @@ class DriveMadGame {
       // Center Hub Cap
       ctx.fillStyle = '#ff6b35';
       ctx.beginPath();
-      ctx.arc(0, 0, wr * 0.2, 0, Math.PI * 2);
+      ctx.arc(0, 0, wr * 0.22, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.restore();
@@ -1010,219 +1353,410 @@ class DriveMadGame {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  //  AUDIO SYSTEM — Procedural Background Music (Web Audio API)
+  //  AUDIO SYSTEM — Web Audio Engine with Adjacent-Level Song Rotation & SFX
   // ═══════════════════════════════════════════════════════════════════════════
 
   _initAudio() {
     this._audioCtx = null;
     this._masterGain = null;
+    this._musicBus = null;
+    this._sfxBus = null;
+    this._compressor = null;
     this._musicPlaying = false;
+    this._musicTimeout = null;
   }
 
-  _startMusic() {
-    if (this._musicPlaying) return;
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      this._audioCtx = new AC();
-      const ctx = this._audioCtx;
-
-      // Master gain
-      this._masterGain = ctx.createGain();
-      this._masterGain.gain.value = this._musicMuted ? 0 : 0.35;
-      this._masterGain.connect(ctx.destination);
-
-      // Compressor for cleaner mix
-      const compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.value = -20;
-      compressor.knee.value = 10;
-      compressor.ratio.value = 4;
-      compressor.connect(this._masterGain);
-
-      this._compressor = compressor;
-      this._musicPlaying = true;
-
-      // Start the melody loop
-      this._scheduleMusicLoop();
-    } catch (e) {
-      console.warn('Audio init failed:', e);
-    }
+  /**
+   * Returns song index (0, 1, or 2) cycling for adjacent levels.
+   * Adjacent levels ALWAYS have different songs!
+   */
+  _getSongForLevel(index) {
+    return Math.abs(index) % 3;
   }
 
-  _scheduleMusicLoop() {
-    if (!this._audioCtx || !this._musicPlaying) return;
-    const ctx = this._audioCtx;
-    const dest = this._compressor;
-
-    // Tempo and note duration
-    const BPM = 140;
-    const beatDur = 60 / BPM;
-    const barDur = beatDur * 4;
-
-    // Cheerful melody scale (C major pentatonic + extras for variety)
+  _getSongData(songIndex) {
     const noteFreqs = {
       'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00,
       'A3': 220.00, 'B3': 246.94,
       'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00,
       'A4': 440.00, 'B4': 493.88,
-      'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'G5': 783.99,
+      'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'G5': 783.99, 'A5': 880.00,
     };
 
-    // Fun upbeat melody pattern (4 bars loop) — Hill Climb Racing style
-    const melodyPatterns = [
-      // Pattern A - bouncy ascending
-      ['C4','E4','G4','C5', 'B4','G4','E4','G4', 'A4','C5','E5','C5', 'G4','E4','D4','E4'],
-      // Pattern B - playful descending
-      ['E5','D5','C5','G4', 'A4','G4','E4','D4', 'C4','E4','G4','A4', 'G4','E4','C4','E4'],
-      // Pattern C - rhythmic bounce
-      ['G4','G4','A4','B4', 'C5','C5','B4','A4', 'G4','A4','G4','E4', 'D4','E4','G4','G4'],
-      // Pattern D - triumphant
-      ['C5','E5','D5','C5', 'G4','A4','G4','E4', 'C4','D4','E4','G4', 'A4','G4','E4','C4'],
+    const songs = [
+      // ─── SONG 0: Turbo Hop (C Major, bouncy arcade) ───
+      {
+        title: 'Track 1: Turbo Hop',
+        BPM: 142, melodyWave: 'square', melodyVol: 0.08, bassVol: 0.13,
+        melodyPatterns: [
+          ['C4','E4','G4','C5', 'B4','G4','E4','G4', 'A4','C5','E5','C5', 'G4','E4','D4','E4'],
+          ['E5','D5','C5','G4', 'A4','G4','E4','D4', 'C4','E4','G4','A4', 'G4','E4','C4','E4'],
+          ['G4','G4','A4','B4', 'C5','C5','B4','A4', 'G4','A4','G4','E4', 'D4','E4','G4','G4'],
+          ['C5','E5','D5','C5', 'G4','A4','G4','E4', 'C4','D4','E4','G4', 'A4','G4','E4','C4'],
+        ],
+        bassPatterns: [
+          ['C3','C3','F3','G3'],
+          ['A3','A3','F3','G3'],
+          ['C3','E3','F3','G3'],
+          ['C3','G3','F3','E3'],
+        ],
+        drumPattern: [
+          [0, 'kick'], [0.5, 'hat'], [1, 'snare'], [1.5, 'hat'],
+          [2, 'kick'], [2.5, 'hat'], [3, 'snare'], [3.5, 'hat'],
+        ],
+      },
+
+      // ─── SONG 1: Night Drift (A Minor, driving synthwave groove) ───
+      {
+        title: 'Track 2: Night Drift',
+        BPM: 148, melodyWave: 'sawtooth', melodyVol: 0.065, bassVol: 0.15,
+        melodyPatterns: [
+          ['A4','C5','E5','A4', 'G4','E4','C4','E4', 'D4','F4','A4','F4', 'E4','C4','A3','C4'],
+          ['E5','D5','C5','A4', 'G4','F4','E4','D4', 'C4','E4','A4','C5', 'B4','A4','G4','E4'],
+          ['A4','A4','C5','D5', 'E5','E5','D5','C5', 'A4','C5','A4','G4', 'F4','E4','D4','E4'],
+          ['C5','E5','D5','C5', 'A4','G4','A4','C5', 'D5','C5','A4','G4', 'A4','C5','E5','A4'],
+        ],
+        bassPatterns: [
+          ['A3','A3','D3','E3'],
+          ['A3','G3','F3','E3'],
+          ['D3','D3','E3','A3'],
+          ['A3','E3','F3','G3'],
+        ],
+        drumPattern: [
+          [0, 'kick'], [0.25, 'hat'], [0.75, 'hat'], [1, 'snare'],
+          [1.5, 'hat'], [2, 'kick'], [2.5, 'kick'], [3, 'snare'], [3.5, 'hat'],
+        ],
+      },
+
+      // ─── SONG 2: Cyber Peak (G Mixolydian, epic rock beat) ───
+      {
+        title: 'Track 3: Cyber Peak',
+        BPM: 134, melodyWave: 'square', melodyVol: 0.075, bassVol: 0.14,
+        melodyPatterns: [
+          ['G4','B4','D5','G5', 'F5','D5','B4','D5', 'C5','E5','G5','E5', 'D5','B4','A4','B4'],
+          ['G5','F5','E5','D5', 'C5','B4','A4','G4', 'A4','B4','D5','E5', 'D5','B4','G4','A4'],
+          ['D5','D5','E5','F5', 'G5','G5','F5','E5', 'D5','E5','D5','B4', 'A4','B4','D5','D5'],
+          ['G5','A5','G5','E5', 'D5','C5','D5','E5', 'G4','A4','B4','D5', 'E5','D5','B4','G4'],
+        ],
+        bassPatterns: [
+          ['G3','G3','C3','D3'],
+          ['G3','F3','E3','D3'],
+          ['C3','C3','D3','G3'],
+          ['G3','D3','C3','D3'],
+        ],
+        drumPattern: [
+          [0, 'kick'], [0.5, 'hat'], [1, 'snare'], [1.5, 'kick'],
+          [2, 'kick'], [2.5, 'hat'], [3, 'snare'], [3.25, 'hat'], [3.75, 'hat'],
+        ],
+      },
     ];
 
-    // Bass pattern (root notes, whole notes)
-    const bassPatterns = [
-      ['C3','C3','F3','G3'],
-      ['A3','A3','F3','G3'],
-      ['C3','E3','F3','G3'],
-      ['C3','G3','F3','E3'],
-    ];
+    return { song: songs[songIndex] || songs[0], noteFreqs };
+  }
 
-    // Drum pattern per bar: [kick/snare timings within 4 beats]
-    // Each entry: [timeInBeats, type] where type = 'kick' | 'snare' | 'hat'
-    const drumPattern = [
-      [0, 'kick'], [0.5, 'hat'], [1, 'snare'], [1.5, 'hat'],
-      [2, 'kick'], [2.5, 'hat'], [3, 'snare'], [3.5, 'hat'],
-    ];
+  _startMusic() {
+    if (this._musicPlaying && this._audioCtx && this._audioCtx.state === 'running') return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!this._audioCtx) {
+        this._audioCtx = new AC();
+      }
+      const ctx = this._audioCtx;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
 
-    const totalBars = melodyPatterns.length * 4; // repeat each pattern
+      if (!this._masterGain) {
+        this._masterGain = ctx.createGain();
+        this._masterGain.gain.value = this._musicMuted ? 0 : 0.35;
+        this._masterGain.connect(ctx.destination);
+
+        const compressor = ctx.createDynamicsCompressor();
+        compressor.threshold.value = -20;
+        compressor.knee.value = 10;
+        compressor.ratio.value = 4;
+        compressor.connect(this._masterGain);
+        this._compressor = compressor;
+
+        // Dedicated SFX bus
+        this._sfxBus = ctx.createGain();
+        this._sfxBus.gain.value = 0.5;
+        this._sfxBus.connect(this._compressor);
+      }
+
+      // Music bus for glitch-free track transitions
+      if (this._musicBus) {
+        try { this._musicBus.disconnect(); } catch(e) {}
+      }
+      this._musicBus = ctx.createGain();
+      this._musicBus.gain.value = 1.0;
+      this._musicBus.connect(this._compressor);
+
+      this._musicPlaying = true;
+
+      if (this._currentSongIndex === -1) {
+        this._currentSongIndex = this._getSongForLevel(this.currentLevelIndex);
+      }
+
+      this._scheduleMusicLoop();
+    } catch (e) {
+      console.warn('Audio start failed:', e);
+    }
+  }
+
+  _restartMusicWithSong(songIndex) {
+    if (this._musicTimeout) {
+      clearTimeout(this._musicTimeout);
+      this._musicTimeout = null;
+    }
+    this._currentSongIndex = songIndex;
+
+    if (!this._audioCtx) {
+      this._startMusic();
+      return;
+    }
+
+    try {
+      if (this._audioCtx.state === 'suspended') {
+        this._audioCtx.resume();
+      }
+
+      // Smoothly disconnect previous notes
+      if (this._musicBus) {
+        try {
+          const oldBus = this._musicBus;
+          oldBus.gain.linearRampToValueAtTime(0.001, this._audioCtx.currentTime + 0.05);
+          setTimeout(() => { try { oldBus.disconnect(); } catch(e){} }, 60);
+        } catch(e) {}
+      }
+
+      this._musicBus = this._audioCtx.createGain();
+      this._musicBus.gain.value = 1.0;
+      this._musicBus.connect(this._compressor);
+
+      this._musicPlaying = true;
+      this._scheduleMusicLoop();
+    } catch (e) {
+      console.warn('Music transition failed:', e);
+    }
+  }
+
+  _scheduleMusicLoop() {
+    if (!this._audioCtx || !this._musicPlaying || !this._musicBus) return;
+    const ctx = this._audioCtx;
+    const dest = this._musicBus;
+
+    const { song, noteFreqs } = this._getSongData(this._currentSongIndex);
+
+    const BPM = song.BPM;
+    const beatDur = 60 / BPM;
+    const barDur = beatDur * 4;
+
+    const totalBars = song.melodyPatterns.length * 4;
     const loopDuration = totalBars * barDur;
-    const now = ctx.currentTime + 0.1;
+    const now = ctx.currentTime + 0.08;
 
-    // Schedule melody, bass, and drums
     for (let bar = 0; bar < totalBars; bar++) {
-      const patIdx = Math.floor(bar / 4) % melodyPatterns.length;
-      const melody = melodyPatterns[patIdx];
-      const bass = bassPatterns[patIdx];
+      const patIdx = Math.floor(bar / 4) % song.melodyPatterns.length;
+      const melody = song.melodyPatterns[patIdx];
+      const bass = song.bassPatterns[patIdx];
       const barStart = now + bar * barDur;
 
-      // Melody notes (16th notes per bar = 4 per beat)
+      // Melody notes
       const noteDur = barDur / melody.length;
       melody.forEach((note, i) => {
         if (!noteFreqs[note]) return;
-        this._playNote(ctx, dest, noteFreqs[note], barStart + i * noteDur, noteDur * 0.85, 'square', 0.08);
+        this._playNote(ctx, dest, noteFreqs[note], barStart + i * noteDur, noteDur * 0.85, song.melodyWave, song.melodyVol);
       });
 
-      // Bass (whole notes per beat)
+      // Bass
       bass.forEach((note, i) => {
         if (!noteFreqs[note]) return;
-        this._playNote(ctx, dest, noteFreqs[note], barStart + i * beatDur, beatDur * 0.9, 'triangle', 0.12);
+        this._playNote(ctx, dest, noteFreqs[note], barStart + i * beatDur, beatDur * 0.9, 'triangle', song.bassVol);
       });
 
       // Drums
-      drumPattern.forEach(([beatOffset, type]) => {
+      song.drumPattern.forEach(([beatOffset, type]) => {
         const t = barStart + beatOffset * beatDur;
         this._playDrum(ctx, dest, type, t);
       });
     }
 
-    // Re-schedule when current loop is about to end
-    const nextLoopTime = (loopDuration - 0.5) * 1000;
+    const nextLoopTime = (loopDuration - 0.4) * 1000;
     this._musicTimeout = setTimeout(() => {
       if (this._musicPlaying) this._scheduleMusicLoop();
     }, Math.max(100, nextLoopTime));
   }
 
   _playNote(ctx, dest, freq, startTime, duration, waveType, volume) {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-    osc.type = waveType;
-    osc.frequency.setValueAtTime(freq, startTime);
+      osc.type = waveType;
+      osc.frequency.setValueAtTime(freq, startTime);
 
-    // Envelope: quick attack, sustain, release
-    gain.gain.setValueAtTime(0, startTime);
-    gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
-    gain.gain.setValueAtTime(volume, startTime + duration * 0.7);
-    gain.gain.linearRampToValueAtTime(0, startTime + duration);
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
+      gain.gain.setValueAtTime(volume, startTime + duration * 0.7);
+      gain.gain.linearRampToValueAtTime(0, startTime + duration);
 
-    osc.connect(gain);
-    gain.connect(dest);
+      osc.connect(gain);
+      gain.connect(dest);
 
-    osc.start(startTime);
-    osc.stop(startTime + duration + 0.05);
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.05);
+    } catch(e) {}
   }
 
   _playDrum(ctx, dest, type, time) {
-    if (type === 'kick') {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(150, time);
-      osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
-      gain.gain.setValueAtTime(0.2, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
-      osc.connect(gain);
-      gain.connect(dest);
-      osc.start(time);
-      osc.stop(time + 0.2);
-    } else if (type === 'snare') {
-      // Noise burst for snare
-      const bufferSize = ctx.sampleRate * 0.08;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
-      }
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.12, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+    try {
+      if (type === 'kick') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(160, time);
+        osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
+        gain.gain.setValueAtTime(0.22, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(time);
+        osc.stop(time + 0.2);
+      } else if (type === 'snare') {
+        const bufferSize = ctx.sampleRate * 0.08;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+        }
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.13, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
 
-      // Add tonal component
-      const osc = ctx.createOscillator();
-      const oscGain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(200, time);
-      osc.frequency.exponentialRampToValueAtTime(80, time + 0.05);
-      oscGain.gain.setValueAtTime(0.1, time);
-      oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(200, time);
+        osc.frequency.exponentialRampToValueAtTime(80, time + 0.05);
+        oscGain.gain.setValueAtTime(0.1, time);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
 
-      source.connect(gain);
-      gain.connect(dest);
-      osc.connect(oscGain);
-      oscGain.connect(dest);
-      source.start(time);
-      osc.start(time);
-      osc.stop(time + 0.1);
-    } else if (type === 'hat') {
-      // Short noise for hi-hat
-      const bufferSize = ctx.sampleRate * 0.03;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+        source.connect(gain);
+        gain.connect(dest);
+        osc.connect(oscGain);
+        oscGain.connect(dest);
+        source.start(time);
+        osc.start(time);
+        osc.stop(time + 0.1);
+      } else if (type === 'hat') {
+        const bufferSize = ctx.sampleRate * 0.03;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+        }
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 7000;
+        gain.gain.setValueAtTime(0.06, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(dest);
+        source.start(time);
       }
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      const gain = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'highpass';
-      filter.frequency.value = 7000;
-      gain.gain.setValueAtTime(0.06, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
-      source.connect(filter);
-      filter.connect(gain);
-      gain.connect(dest);
-      source.start(time);
-    }
+    } catch(e) {}
+  }
+
+  _playSFX(type) {
+    if (!this._audioCtx || this._musicMuted) return;
+    try {
+      const ctx = this._audioCtx;
+      const dest = this._sfxBus || this._compressor || ctx.destination;
+      const t = ctx.currentTime;
+
+      if (type === 'win') {
+        // Triumphant victory arpeggio: C5 -> E5 -> G5 -> C6
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, t + idx * 0.1);
+          gain.gain.setValueAtTime(0.18, t + idx * 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.1 + 0.35);
+          osc.connect(gain);
+          gain.connect(dest);
+          osc.start(t + idx * 0.1);
+          osc.stop(t + idx * 0.1 + 0.4);
+        });
+      } else if (type === 'crash') {
+        // Explosion noise + pitch drop
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, t);
+        osc.frequency.exponentialRampToValueAtTime(25, t + 0.4);
+        gain.gain.setValueAtTime(0.35, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(t);
+        osc.stop(t + 0.5);
+      } else if (type === 'brake') {
+        // High tire screech chirp
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1100 + Math.random() * 200, t);
+        osc.frequency.linearRampToValueAtTime(800, t + 0.12);
+        gain.gain.setValueAtTime(0.08, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(t);
+        osc.stop(t + 0.15);
+      } else if (type === 'boost') {
+        // Sci-fi rising whoosh
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, t);
+        osc.frequency.exponentialRampToValueAtTime(880, t + 0.3);
+        gain.gain.setValueAtTime(0.18, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(t);
+        osc.stop(t + 0.4);
+      } else if (type === 'stunt') {
+        // High sparkle bell
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(880, t);
+        osc.frequency.setValueAtTime(1318.5, t + 0.08);
+        gain.gain.setValueAtTime(0.2, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(t);
+        osc.stop(t + 0.45);
+      }
+    } catch(e) {}
   }
 
   toggleMute() {
     this._musicMuted = !this._musicMuted;
     localStorage.setItem('drivemad_muted', this._musicMuted);
-    if (this._masterGain) {
+    if (this._masterGain && this._audioCtx) {
       this._masterGain.gain.linearRampToValueAtTime(
         this._musicMuted ? 0 : 0.35,
         this._audioCtx.currentTime + 0.1
@@ -1232,7 +1766,6 @@ class DriveMadGame {
   }
 
   _createMuteButton() {
-    // Menu mute button
     const menuBtn = document.createElement('div');
     menuBtn.id = 'btn-mute-menu';
     menuBtn.className = 'mute-btn';
@@ -1246,8 +1779,8 @@ class DriveMadGame {
     const icon = this._musicMuted ? '🔇' : '🔊';
     const menuBtn = document.getElementById('btn-mute-menu');
     if (menuBtn) menuBtn.textContent = icon;
-    const hudBtn = document.getElementById('btn-mute-hud');
-    if (hudBtn) hudBtn.innerHTML = `${icon} Music`;
+    const muteIcon = document.getElementById('btn-mute-icon');
+    if (muteIcon) muteIcon.textContent = icon;
   }
 }
 

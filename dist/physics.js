@@ -70,7 +70,7 @@ class Wheel {
     this.contact = false;
     this.contactNormal = new Vec2(0, 1);
     this.contactPoint = new Vec2();
-    this.suspensionComp = 0;
+    this.suspensionComp = 0; // 0 = relaxed, 1 = fully compressed
     this.surfaceVel = new Vec2();
   }
 
@@ -99,6 +99,26 @@ class TrackGeometry {
           const y1 = seg.y + seg.rise;
           const x0 = seg.x, x1 = seg.x + seg.w;
           lines.push(TrackGeometry.seg(x0, y0, x1, y1));
+          break;
+        }
+        case 'boost': {
+          // Turbo boost pad
+          const y = seg.y;
+          const x0 = seg.x, x1 = seg.x + seg.w;
+          const line = TrackGeometry.seg(x0, y, x1, y);
+          line.isBoost = true;
+          line.boostPower = seg.power || 32;
+          lines.push(line);
+          break;
+        }
+        case 'bounce': {
+          // High bounce jump pad
+          const y = seg.y;
+          const x0 = seg.x, x1 = seg.x + seg.w;
+          const line = TrackGeometry.seg(x0, y, x1, y);
+          line.isBounce = true;
+          line.bouncePower = seg.power || 16;
+          lines.push(line);
           break;
         }
         case 'bridge': {
@@ -265,6 +285,14 @@ class PhysicsWorld {
       new Wheel(cfg.bodyWidth / 2 - 0.35, -cfg.bodyHeight / 2 - 0.12),
     ];
 
+    this.car.airTime = 0;
+    this.car.rotAccum = 0;
+    this.car.flips = 0;
+    this.car.lastStunt = null;
+    this.car.boostTime = 0;
+    this.car.bounceTime = 0;
+    this.car.landingImpact = 0;
+
     this.driveForce = 0;
     this.brakeForce = 0;
     return this.car;
@@ -283,28 +311,77 @@ class PhysicsWorld {
     // Inputs: Forward (Right/Up/W/D) & Backward (Left/Down/A/S)
     const isForward = controls.forward || controls.right || controls.up;
     const isBackward = controls.backward || controls.left || controls.down;
+    const isBraking = controls.brake;
 
-    if (isForward && !isBackward) {
+    const anyWheelContact = car.wheels.some(w => w.contact);
+
+    if (isBraking) {
+      this.driveForce = 0;
+      this.brakeForce = cfg.brakeForce;
+    } else if (isForward && !isBackward) {
       this.driveForce = cfg.engineForce;
-      car.applyTorque(-cfg.tiltTorque * 0.7, dt); // slight forward tilt
+      this.brakeForce = 0;
+      if (anyWheelContact) {
+        car.applyTorque(-cfg.tiltTorque * 0.7, dt); // slight forward tilt on ground
+      }
     } else if (isBackward && !isForward) {
       this.driveForce = -cfg.reverseForce;
-      car.applyTorque(cfg.tiltTorque * 0.7, dt);  // slight backward tilt
+      this.brakeForce = 0;
+      if (anyWheelContact) {
+        car.applyTorque(cfg.tiltTorque * 0.7, dt);  // slight backward tilt on ground
+      }
     } else {
       this.driveForce = 0;
+      this.brakeForce = 0;
     }
+
+    // PRO FEATURE: Air Control / Stunt Flips when wheels are airborne!
+    if (!anyWheelContact) {
+      car.airTime += dt;
+      car.rotAccum += car.angVel * dt;
+
+      // Detect full 360 flips
+      if (car.rotAccum >= Math.PI * 1.8) {
+        car.flips++;
+        car.lastStunt = '★ BACKFLIP! +500 ★';
+        car.rotAccum = 0;
+      } else if (car.rotAccum <= -Math.PI * 1.8) {
+        car.flips++;
+        car.lastStunt = '★ FRONTFLIP! +500 ★';
+        car.rotAccum = 0;
+      }
+
+      // Air pitch control for stunts and smooth ramp landing
+      if (isBackward && !isForward) {
+        car.angVel += 7.5 * dt; // pitch back
+      } else if (isForward && !isBackward) {
+        car.angVel -= 7.5 * dt; // pitch forward
+      }
+    } else {
+      // Landing detection
+      if (car.airTime > 0.8) {
+        car.lastStunt = `AIR TIME ${car.airTime.toFixed(1)}s!`;
+        car.landingImpact = Math.abs(car.vel.y);
+      }
+      car.airTime = 0;
+      car.rotAccum = 0;
+    }
+
+    if (car.boostTime > 0) car.boostTime -= dt;
+    if (car.bounceTime > 0) car.bounceTime -= dt;
 
     // Gravity & Air Drag
     car.applyForce(new Vec2(0, this.gravity * car.mass), dt);
     car.vel.x *= Math.pow(cfg.airFriction, dt * 60);
     car.vel.y *= Math.pow(cfg.airFriction, dt * 60);
-    car.angVel *= Math.pow(0.88, dt * 60);
+    car.angVel *= Math.pow(anyWheelContact ? 0.88 : 0.96, dt * 60);
 
-    // Speed Cap
+    // Speed Cap (boost raises cap temporarily)
+    const effectiveMaxSpeed = car.boostTime > 0 ? cfg.maxSpeed * 1.5 : cfg.maxSpeed;
     const spd = car.vel.len();
-    if (spd > cfg.maxSpeed) {
-      car.vel.x *= cfg.maxSpeed / spd;
-      car.vel.y *= cfg.maxSpeed / spd;
+    if (spd > effectiveMaxSpeed) {
+      car.vel.x *= effectiveMaxSpeed / spd;
+      car.vel.y *= effectiveMaxSpeed / spd;
     }
 
     // Integrate body
@@ -342,6 +419,19 @@ class PhysicsWorld {
           wheel.contact = true;
           wheel.contactNormal = hit.normal;
           wheel.contactPoint = hit.point;
+          wheel.suspensionComp = Math.min(1, Math.max(0, hit.penetration / (cfg.wheelRadius * 0.6)));
+
+          // Turbo Boost Pad trigger
+          if (line.isBoost) {
+            car.vel.x += (line.boostPower || 32) * dt * 4;
+            car.boostTime = 0.6;
+          }
+
+          // Bounce Pad trigger
+          if (line.isBounce) {
+            car.vel.y = Math.max(car.vel.y, (line.bouncePower || 16));
+            car.bounceTime = 0.4;
+          }
 
           // Push car out of ground
           car.pos.x += hit.normal.x * hit.penetration;
@@ -388,6 +478,18 @@ class PhysicsWorld {
             car.vel.y += driveImp.y;
           }
 
+          // Brake force — heavy deceleration when brake is active
+          if (this.brakeForce > 0) {
+            const brakeFric = -vT * 4.5 * car.mass * 0.5;
+            const brakeImp = tang.scale(brakeFric * dt);
+            car.vel.x += brakeImp.x * car.invM;
+            car.vel.y += brakeImp.y * car.invM;
+            car.angVel += (r.x * brakeImp.y - r.y * brakeImp.x) * car.invI;
+            // Also dampen linear velocity directly
+            car.vel.x *= Math.pow(0.92, dt * 60);
+            car.vel.y *= Math.pow(0.96, dt * 60);
+          }
+
           // Transfer weight onto see-saws
           if (line.seeSaw) {
             const offset = wPos.x - line.seeSaw.pivot.x;
@@ -398,6 +500,10 @@ class PhysicsWorld {
           wheel.spin += (vT / cfg.wheelRadius) * dt;
         }
       });
+
+      if (!wheel.contact) {
+        wheel.suspensionComp = Math.max(0, wheel.suspensionComp - dt * 6);
+      }
     });
 
     // Crash detection (Driver head touches ground or spinner obstacle)
