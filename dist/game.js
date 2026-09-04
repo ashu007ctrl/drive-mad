@@ -1806,13 +1806,7 @@ class DriveMadGame {
   }
 
   _createMuteButton() {
-    const menuBtn = document.createElement('div');
-    menuBtn.id = 'btn-mute-menu';
-    menuBtn.className = 'mute-btn';
-    menuBtn.textContent = this._musicMuted ? '🔇' : '🔊';
-    menuBtn.title = 'Toggle Music (M)';
-    menuBtn.addEventListener('click', (e) => { e.stopPropagation(); this.toggleMute(); });
-    document.getElementById('screen-menu').appendChild(menuBtn);
+    // Menu toggle music button removed as requested
   }
 
   _updateMuteButton() {
