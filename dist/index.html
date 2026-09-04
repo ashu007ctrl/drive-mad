@@ -1217,13 +1217,21 @@
       box-shadow: 0 6px 20px rgba(255, 107, 53, 0.45);
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 768px) {
+      #screen-menu {
+        padding-top: max(env(safe-area-inset-top, 24px), 48px);
+      }
+
       .about-btn {
-        top: max(env(safe-area-inset-top), 12px);
-        left: max(env(safe-area-inset-left), 12px);
-        padding: 5px 12px;
-        font-size: 11px;
-        gap: 5px;
+        top: max(env(safe-area-inset-top, 20px), 36px);
+        left: max(env(safe-area-inset-left, 16px), 16px);
+        padding: 6px 14px;
+        font-size: 12px;
+        gap: 6px;
+      }
+
+      .logo-container {
+        margin-top: 12px;
       }
     }
 
