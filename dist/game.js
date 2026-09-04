@@ -51,6 +51,7 @@ class DriveMadGame {
     this._resize();
     this._bindInput();
     this._buildMenu();
+    this._initAboutSwipeGesture();
     this._createMuteButton();
     this.toggleAboutModal(false);
     this._setScreen('screen-menu');
@@ -202,34 +203,150 @@ class DriveMadGame {
 
   _buildMenu() {
     const grid = document.getElementById('level-select');
+    if (!grid) return;
     grid.innerHTML = '';
 
     // Check max unlocked level (default level 0 is unlocked)
     let maxUnlocked = 0;
+    let completedCount = 0;
     LEVELS.forEach((_, i) => {
       if (this.progress[i] !== undefined) {
         maxUnlocked = Math.max(maxUnlocked, i + 1);
+        completedCount++;
       }
     });
     maxUnlocked = Math.min(LEVELS.length - 1, maxUnlocked);
+    this.currentMaxUnlocked = maxUnlocked;
 
-    LEVELS.forEach((lvl, i) => {
-      const btn = document.createElement('div');
-      const isLocked = i > maxUnlocked;
-      const isCompleted = !!this.progress[i];
+    // Calculate progression stats
+    const pct = Math.round((completedCount / LEVELS.length) * 100);
+    const starsEarned = completedCount * 3;
 
-      btn.className = 'lvl-btn' + (isLocked ? ' locked' : '') + (isCompleted ? ' completed' : '');
-      btn.innerHTML = `
-        <div class="num">${isLocked ? '🔒' : (i + 1)}</div>
-        <div class="stars">${isCompleted ? '★★★' : (isLocked ? '' : '☆☆☆')}</div>
-      `;
-      btn.title = lvl.name;
+    // Determine current campaign stage
+    let currentStageIndex = 0;
+    if (maxUnlocked >= 40) currentStageIndex = 4;
+    else if (maxUnlocked >= 30) currentStageIndex = 3;
+    else if (maxUnlocked >= 20) currentStageIndex = 2;
+    else if (maxUnlocked >= 10) currentStageIndex = 1;
 
-      if (!isLocked) {
-        btn.addEventListener('click', () => this.loadLevel(i));
+    const stageNames = [
+      'Stage 1 • Rookie Ramps',
+      'Stage 2 • Bridges & Gaps',
+      'Stage 3 • Turbo Loops',
+      'Stage 4 • Extreme Hazards',
+      'Stage 5 • Mad Master'
+    ];
+
+    // Update Professional Career Dashboard Elements
+    const stageNameEl = document.getElementById('career-stage-name');
+    if (stageNameEl) stageNameEl.textContent = stageNames[currentStageIndex];
+
+    const pctBadgeEl = document.getElementById('career-pct-badge');
+    if (pctBadgeEl) pctBadgeEl.textContent = `${pct}% Complete`;
+
+    const progBarEl = document.getElementById('career-progress-bar');
+    if (progBarEl) progBarEl.style.width = `${Math.max(4, pct)}%`;
+
+    const levelsValEl = document.getElementById('metric-levels-val');
+    if (levelsValEl) levelsValEl.textContent = `${completedCount} / ${LEVELS.length}`;
+
+    const starsValEl = document.getElementById('metric-stars-val');
+    if (starsValEl) starsValEl.textContent = `${starsEarned} / 150`;
+
+    const statusValEl = document.getElementById('metric-status-val');
+    if (statusValEl) statusValEl.textContent = `Level ${maxUnlocked + 1}`;
+
+    const heroName = document.getElementById('hero-level-name');
+    if (heroName) {
+      const currentLvl = LEVELS[maxUnlocked];
+      if (currentLvl && currentLvl.name && !/^level\s*\d+$/i.test(currentLvl.name.trim())) {
+        heroName.textContent = `Level ${maxUnlocked + 1}: ${currentLvl.name}`;
+      } else {
+        heroName.textContent = `Level ${maxUnlocked + 1}`;
       }
-      grid.appendChild(btn);
+    }
+
+    // Stages definitions
+    const stages = [
+      { name: 'Stage 1 • Rookie Ramps 🏁', start: 0, end: 9 },
+      { name: 'Stage 2 • Bridges & Gaps ⚡', start: 10, end: 19 },
+      { name: 'Stage 3 • Turbo Loops 🔥', start: 20, end: 29 },
+      { name: 'Stage 4 • Extreme Hazards 🌪️', start: 30, end: 39 },
+      { name: 'Stage 5 • Mad Master 👑', start: 40, end: 49 },
+    ];
+
+    stages.forEach(stage => {
+      const section = document.createElement('div');
+      section.className = 'stage-section';
+
+      let stageCompleted = 0;
+      for (let j = stage.start; j <= Math.min(stage.end, LEVELS.length - 1); j++) {
+        if (this.progress[j] !== undefined) stageCompleted++;
+      }
+      const totalInStage = Math.min(stage.end, LEVELS.length - 1) - stage.start + 1;
+
+      const header = document.createElement('div');
+      header.className = 'stage-header';
+      header.innerHTML = `
+        <div class="stage-title">${stage.name}</div>
+        <div class="stage-pill">${stageCompleted}/${totalInStage} ⭐</div>
+      `;
+      section.appendChild(header);
+
+      const stageGrid = document.createElement('div');
+      stageGrid.className = 'stage-grid';
+
+      for (let i = stage.start; i <= Math.min(stage.end, LEVELS.length - 1); i++) {
+        const lvl = LEVELS[i];
+        const btn = document.createElement('div');
+        const isLocked = i > maxUnlocked;
+        const isCompleted = !!this.progress[i];
+        const isCurrent = i === maxUnlocked && !isCompleted;
+
+        btn.className = 'lvl-btn' + 
+          (isLocked ? ' locked' : '') + 
+          (isCompleted ? ' completed' : '') + 
+          (isCurrent ? ' current' : '');
+          
+        btn.innerHTML = `
+          <div class="num">${isLocked ? '🔒' : (i + 1)}</div>
+          <div class="stars">${isCompleted ? '★★★' : (isLocked ? '' : '☆☆☆')}</div>
+        `;
+        btn.title = lvl.name;
+
+        if (!isLocked) {
+          btn.addEventListener('click', () => this.loadLevel(i));
+        }
+        stageGrid.appendChild(btn);
+      }
+
+      section.appendChild(stageGrid);
+      grid.appendChild(section);
     });
+  }
+
+  jumpToStage(stageIndex) {
+    const stageSections = document.querySelectorAll('.stage-section');
+    if (stageSections && stageSections[stageIndex]) {
+      stageSections[stageIndex].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    const pills = document.querySelectorAll('.stage-nav-tab');
+    pills.forEach((p, idx) => {
+      if (idx === stageIndex) p.classList.add('active');
+      else p.classList.remove('active');
+    });
+  }
+
+  scrollDownToLevels() {
+    const anchor = document.getElementById('levels-anchor') || document.getElementById('level-select');
+    if (anchor) {
+      anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  playCurrentLevel() {
+    const idx = (this.currentMaxUnlocked !== undefined) ? this.currentMaxUnlocked : 0;
+    this.loadLevel(idx);
   }
 
   loadLevel(index) {
@@ -339,15 +456,90 @@ class DriveMadGame {
   toggleAboutModal(show) {
     const modal = document.getElementById('modal-about');
     if (!modal) return;
+    const card = modal.querySelector('.about-modal-card');
     if (show) {
+      modal.style.display = 'flex';
+      modal.offsetHeight; // force layout calculation for CSS transition
       modal.classList.add('active');
       modal.classList.remove('hidden');
-      modal.style.display = 'flex';
+      if (card) {
+        card.style.transform = '';
+        card.classList.remove('closing');
+      }
     } else {
-      modal.classList.remove('active');
-      modal.classList.add('hidden');
-      modal.style.display = 'none';
+      if (card && window.innerWidth <= 640) {
+        card.classList.add('closing');
+        setTimeout(() => {
+          modal.classList.remove('active');
+          modal.classList.add('hidden');
+          modal.style.display = 'none';
+          card.classList.remove('closing');
+          card.style.transform = '';
+        }, 220);
+      } else {
+        modal.classList.remove('active');
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        if (card) card.style.transform = '';
+      }
     }
+  }
+
+  _initAboutSwipeGesture() {
+    const card = document.querySelector('.about-modal-card');
+    const modal = document.getElementById('modal-about');
+    if (!card || !modal) return;
+
+    let startY = 0;
+    let isDragging = false;
+
+    const onTouchStart = (e) => {
+      const touch = e.touches[0];
+      const content = card.querySelector('.about-content');
+      const isHeaderOrBar = e.target.closest('.modal-drag-bar, .about-header');
+      const isScrolledToTop = content ? content.scrollTop <= 0 : true;
+
+      if (isHeaderOrBar || isScrolledToTop) {
+        startY = touch.clientY;
+        isDragging = true;
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (!isDragging) return;
+      const touch = e.touches[0];
+      const deltaY = touch.clientY - startY;
+
+      // Only allow dragging downward
+      if (deltaY > 0) {
+        card.style.transform = `translateY(${deltaY}px)`;
+        if (e.cancelable) e.preventDefault();
+      } else {
+        card.style.transform = '';
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      const changedTouch = e.changedTouches ? e.changedTouches[0] : null;
+      const deltaY = changedTouch ? (changedTouch.clientY - startY) : 0;
+
+      if (deltaY > 75) {
+        this.toggleAboutModal(false);
+      } else {
+        card.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)';
+        card.style.transform = '';
+        setTimeout(() => {
+          card.style.transition = '';
+        }, 240);
+      }
+    };
+
+    card.addEventListener('touchstart', onTouchStart, { passive: false });
+    card.addEventListener('touchmove', onTouchMove, { passive: false });
+    card.addEventListener('touchend', onTouchEnd, { passive: true });
+    card.addEventListener('touchcancel', onTouchEnd, { passive: true });
   }
 
   _showStuntToast(text) {
