@@ -760,7 +760,7 @@ const LEVELS = [
       { type: 'ramp', x: 56.6, y: 5.0, w: 7, rise: -2.8 },
       { type: 'flat', x: 63.6, y: 2.2, w: 3 },
       { type: 'gap', x: 66.6, w: 15 },
-      { type: 'moving', x: 71.1, y: 2.2, w: 7.0, range: 2.5, speed: 1.5 },
+      { type: 'moving', x: 69.1, y: 2.2, w: 7.0, range: 2.5, speed: 1.5 },
       { type: 'flat', x: 81.6, y: 2.2, w: 4 },
       { type: 'bump', x: 85.6, y: 2.2, w: 3.5, h: 0.58 },
       { type: 'flat', x: 89.1, y: 2.2, w: 2.5 },
