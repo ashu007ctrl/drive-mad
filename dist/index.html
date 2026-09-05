@@ -35,10 +35,14 @@
     }
 
     #game-canvas {
-      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
+      display: block;
       touch-action: none;
+      z-index: 1;
     }
 
     /* ── Screens ─────────────────────────── */
@@ -671,27 +675,49 @@
     }
 
     /* ══════════════════════════════════════════════════════════════
-       HUD STYLES — Ultra Crisp Across All Day & Night Themes
+       HUD STYLES — Top Info Bar + Left & Right Vertical Action Columns
+       ══════════════════════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════════
+       HUD STYLES — Centered Song & Level, Left Time, Right Action Stack
        ══════════════════════════════════════════════════════════════ */
     #hud {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: max(env(safe-area-inset-top), 8px) max(env(safe-area-inset-right), 12px) 6px max(env(safe-area-inset-left), 12px);
+      inset: 0;
       pointer-events: none;
       z-index: 50;
-      gap: 8px;
     }
 
-    .hud-group {
+    /* Top Bar: Left Stats (Time, Speed) & Center Info (Level, Song) */
+    .hud-top-bar {
+      position: absolute;
+      top: max(env(safe-area-inset-top), 8px);
+      left: max(env(safe-area-inset-left), 12px);
+      right: max(env(safe-area-inset-right), 12px);
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    /* Left Stats: Time & Speed */
+    .hud-stats-left {
       display: flex;
       align-items: center;
       gap: 6px;
-      flex-wrap: nowrap;
+      pointer-events: none;
+    }
+
+    /* Center Info: Song & Level Name in Desktop View */
+    .hud-center-info {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+      white-space: nowrap;
     }
 
     .hud-pill {
@@ -700,19 +726,19 @@
       -webkit-backdrop-filter: blur(14px);
       border-radius: 100px;
       border: 1px solid rgba(255, 255, 255, .18);
-      padding: 6px 12px;
+      padding: 6px 13px;
       color: #fff;
       font-size: 13px;
       font-weight: 700;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       pointer-events: auto;
       white-space: nowrap;
       box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
     }
 
-    /* HIGH-CONTRAST SPEEDOMETER PILL (Vividly readable in sky, desert, sunset, candy & night!) */
+    /* HIGH-CONTRAST SPEEDOMETER PILL */
     .hud-speedo {
       background: rgba(15, 23, 42, .92);
       border: 1.5px solid #ff9800;
@@ -754,20 +780,46 @@
       text-shadow: 0 0 12px rgba(0, 229, 255, .9);
     }
 
+    #hud-level-pill {
+      background: rgba(15, 23, 42, .9);
+      border-color: rgba(96, 165, 250, .4);
+    }
+
     #hud-song-pill {
-      background: rgba(30, 27, 75, .88);
-      border-color: rgba(167, 139, 250, .45);
+      background: rgba(30, 27, 75, .9);
+      border-color: rgba(167, 139, 250, .5);
       color: #ede9fe;
       font-size: 12px;
     }
 
+    /* Right Side Action Column (All buttons: Pause, Restart, Music, Menu) */
+    .hud-actions-right {
+      position: absolute;
+      top: max(env(safe-area-inset-top), 8px);
+      right: max(env(safe-area-inset-right), 12px);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 7px;
+      pointer-events: none;
+      z-index: 52;
+    }
+
     .hud-btn-action {
       cursor: pointer;
-      transition: transform .12s, background .15s;
+      transition: transform .12s, background .15s, box-shadow .15s;
     }
 
     .hud-btn-action:hover {
       transform: scale(1.06);
+    }
+
+    .hud-btn-action:active {
+      transform: scale(0.95);
+    }
+
+    #btn-pause-hud:hover {
+      background: rgba(255, 255, 255, .25);
     }
 
     #btn-restart-hud {
@@ -779,10 +831,6 @@
       background: #ff6b35;
     }
 
-    #btn-pause-hud:hover {
-      background: rgba(255, 255, 255, .25);
-    }
-
     #btn-mute-hud:hover {
       background: rgba(255, 255, 255, .25);
     }
@@ -791,25 +839,51 @@
       background: rgba(255, 255, 255, .25);
     }
 
+    /* Small Landscape Icon in HUD for Mobile View */
+    .hud-landscape-pill {
+      display: none !important;
+    }
+
+    @media (max-width: 768px) {
+      .hud-landscape-pill {
+        display: flex !important;
+        border-color: rgba(56, 189, 248, 0.5) !important;
+        color: #38bdf8 !important;
+      }
+    }
+
+    #progress-bar-wrap {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      z-index: 60;
+      pointer-events: none;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    #progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff6b35, #ffd700);
+      transition: width .1s ease;
+    }
+
     /* ══════════════════════════════════════════════════════════════
-       MOBILE RESPONSIVENESS (< 860px / Landscape Phones):
-       - Song pill hidden on mobile for clean uncluttered view
-       - Stats pinned to Top-Left, Actions pinned to Top-Right
-       - Full open center space
+       MOBILE RESPONSIVENESS (< 860px):
+       - Time on left side
+       - Level name in center
+       - Right-side vertical compact icon actions
        ══════════════════════════════════════════════════════════════ */
     @media(max-width:860px) {
-      #hud {
-        padding: max(env(safe-area-inset-top), 6px) max(env(safe-area-inset-right), 10px) 0 max(env(safe-area-inset-left), 10px);
-        justify-content: space-between;
+      .hud-top-bar {
+        top: max(env(safe-area-inset-top), 6px);
+        left: max(env(safe-area-inset-left), 8px);
+        right: max(env(safe-area-inset-right), 8px);
       }
 
-      /* Hide song track in mobile view as requested */
-      #hud-song-pill {
-        display: none !important;
-      }
-
-      /* Left stats cluster */
-      .hud-left {
+      .hud-stats-left {
         gap: 4px;
       }
 
@@ -819,18 +893,28 @@
         border-radius: 18px;
       }
 
-      /* Right actions cluster (Icon-only buttons save massive horizontal space) */
-      .hud-right {
-        gap: 4px;
-      }
-
-      .hud-btn-text {
+      /* In mobile view: hide song pill to avoid crowding, keep level name in center */
+      #hud-song-pill {
         display: none !important;
       }
 
-      .hud-btn-action {
-        width: 30px;
-        height: 30px;
+      .hud-center-info {
+        gap: 4px;
+      }
+
+      .hud-actions-right {
+        top: max(env(safe-area-inset-top), 6px);
+        right: max(env(safe-area-inset-right), 8px);
+        gap: 5px;
+      }
+
+      .hud-actions-right .hud-btn-text {
+        display: none !important;
+      }
+
+      .hud-actions-right .hud-btn-action {
+        width: 32px;
+        height: 32px;
         padding: 0;
         display: flex;
         align-items: center;
@@ -838,18 +922,12 @@
         border-radius: 50%;
         font-size: 13px;
       }
-
-      #progress-bar-wrap {
-        top: 12px;
-        height: 4px;
-        width: min(160px, 36vw);
-      }
     }
 
-    /* Extra optimization for short screen heights (e.g. mobile landscape 830x296) */
+    /* Extra optimization for short screen heights (e.g. mobile landscape) */
     @media(max-height:420px) {
-      #hud {
-        padding-top: max(env(safe-area-inset-top), 4px);
+      .hud-top-bar {
+        top: max(env(safe-area-inset-top), 4px);
       }
 
       .hud-pill {
@@ -857,16 +935,19 @@
         font-size: 10px;
       }
 
-      .hud-btn-action {
-        width: 26px;
-        height: 26px;
+      .hud-actions-right {
+        top: max(env(safe-area-inset-top), 4px);
+        gap: 4px;
+      }
+
+      .hud-actions-right .hud-btn-action {
+        width: 27px;
+        height: 27px;
         font-size: 11px;
       }
 
       #progress-bar-wrap {
-        top: 8px;
-        height: 3px;
-        width: min(130px, 30vw);
+        height: 2px;
       }
 
       #on-screen-controls {
@@ -893,7 +974,7 @@
     /* Stunt floating toast */
     #stunt-toast {
       position: fixed;
-      top: 72px;
+      top: 70px;
       left: 50%;
       transform: translateX(-50%) scale(0.8);
       background: linear-gradient(135deg, #ff6b35, #ffd700);
@@ -906,11 +987,13 @@
       z-index: 60;
       pointer-events: none;
       opacity: 0;
+      display: none;
       transition: all .25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       box-shadow: 0 8px 24px rgba(255, 107, 53, .6);
     }
 
     #stunt-toast.show {
+      display: block !important;
       opacity: 1;
       transform: translateX(-50%) scale(1.05);
     }
@@ -1246,6 +1329,194 @@
       box-shadow: 0 6px 20px rgba(255, 107, 53, 0.45);
     }
 
+    /* Small Landscape Mode Icon in Mobile View */
+    .landscape-btn {
+      position: absolute;
+      top: max(env(safe-area-inset-top), 20px);
+      right: max(env(safe-area-inset-right), 22px);
+      padding: 7px 15px;
+      border-radius: 100px;
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(56, 189, 248, 0.45);
+      color: #38bdf8;
+      font-size: 13px;
+      font-weight: 800;
+      display: none;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      z-index: 150;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      user-select: none;
+    }
+
+    .landscape-btn:hover {
+      background: rgba(56, 189, 248, 0.25);
+      border-color: #38bdf8;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45);
+    }
+
+    .landscape-btn:active {
+      transform: scale(0.94);
+    }
+
+    .landscape-icon-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      animation: rotatePhone 3s ease-in-out infinite;
+    }
+
+    @keyframes rotatePhone {
+      0%, 25% { transform: rotate(0deg); }
+      50%, 75% { transform: rotate(-90deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    /* Mobile Menu Landscape Recommendation Banner */
+    .mobile-landscape-notice {
+      display: none;
+      position: relative;
+      width: calc(100% - 20px);
+      max-width: 520px;
+      margin: 14px auto 10px;
+      background: linear-gradient(135deg, rgba(26, 23, 68, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 1.5px solid rgba(56, 189, 248, 0.45);
+      border-radius: 18px;
+      padding: 12px 14px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 20px rgba(56, 189, 248, 0.2);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+      animation: noticeSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes noticeSlideDown {
+      0% {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.96);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .mln-icon-box {
+      flex-shrink: 0;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #38bdf8;
+    }
+
+    .mln-rotate-svg {
+      animation: rotatePhone 3s ease-in-out infinite;
+    }
+
+    .mln-content {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .mln-header-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .mln-badge {
+      font-size: 9px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 6px;
+      letter-spacing: 0.8px;
+    }
+
+    .mln-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #f8fafc;
+      letter-spacing: -0.2px;
+    }
+
+    .mln-desc {
+      font-size: 11px;
+      color: rgba(226, 232, 240, 0.85);
+      line-height: 1.35;
+    }
+
+    .mln-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .mln-btn-rotate {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      border: none;
+      color: #031525;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 7px 11px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+    }
+
+    .mln-btn-rotate:active {
+      transform: scale(0.93);
+    }
+
+    .mln-btn-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.7);
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mln-btn-close:hover,
+    .mln-btn-close:active {
+      background: rgba(255, 255, 255, 0.25);
+      color: #fff;
+    }
+
+    /* Small Landscape Icon in HUD for Mobile View */
+    .hud-landscape-pill {
+      display: none !important;
+    }
+
     @media (max-width: 768px) {
       #screen-menu {
         padding-top: max(env(safe-area-inset-top, 24px), 48px);
@@ -1259,8 +1530,34 @@
         gap: 6px;
       }
 
+      .landscape-btn {
+        display: flex;
+        top: max(env(safe-area-inset-top, 20px), 26px);
+        right: max(env(safe-area-inset-right, 16px), 16px);
+        padding: 6px 12px;
+        font-size: 12px;
+        gap: 5px;
+      }
+
+      .mobile-landscape-notice {
+        display: flex;
+      }
+
+      .hud-landscape-pill {
+        display: flex !important;
+        border-color: rgba(56, 189, 248, 0.5) !important;
+        color: #38bdf8 !important;
+      }
+
       .logo-container {
         margin-top: 12px;
+      }
+    }
+
+    /* Automatically hide the landscape notice banner if already in mobile landscape orientation */
+    @media (max-width: 900px) and (orientation: landscape) {
+      .mobile-landscape-notice {
+        display: none !important;
       }
     }
 
@@ -1772,10 +2069,46 @@
       <span class="about-text">About</span>
     </div>
 
+    <!-- Top Right Landscape Mode Icon for Mobile View -->
+    <div id="btn-landscape-menu" class="landscape-btn" onclick="game.requestLandscape()" title="Landscape Mode (Better View)">
+      <span class="landscape-icon-box">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="6" width="18" height="12" rx="2.5" />
+          <path d="M12 12h.01" />
+        </svg>
+      </span>
+      <span class="landscape-btn-text">Landscape</span>
+    </div>
+
     <div class="menu-wrapper">
       <div class="logo-container">
         <div class="logo">Drive<span>Mad</span><span class="badge">PRO</span></div>
         <div class="subtitle">Physics Stunt Racing</div>
+      </div>
+
+      <!-- Mobile Landscape Recommendation Notification Banner -->
+      <div id="mobile-landscape-notice" class="mobile-landscape-notice">
+        <div class="mln-icon-box">
+          <svg class="mln-rotate-svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="6" width="18" height="12" rx="2.5"></rect>
+            <path d="M12 12h.01"></path>
+            <path d="M17 2l2 2-2 2"></path>
+            <path d="M7 22l-2-2 2-2"></path>
+          </svg>
+        </div>
+        <div class="mln-content">
+          <div class="mln-header-row">
+            <span class="mln-badge">BETTER VIEW</span>
+            <span class="mln-title">Landscape Mode Recommended</span>
+          </div>
+          <div class="mln-desc">Rotate your device horizontally for wider track view, better obstacle timing & smoother stunt driving!</div>
+        </div>
+        <div class="mln-actions">
+          <button type="button" class="mln-btn-rotate" onclick="game.requestLandscape()" aria-label="Rotate to Landscape">
+            <span>Rotate</span> 🔄
+          </button>
+          <button type="button" class="mln-btn-close" onclick="game.dismissLandscapeNotice()" aria-label="Dismiss notification">✕</button>
+        </div>
       </div>
 
       <!-- Hero Stunt Truck Image Showcase (Sleek high-res 3D monster truck) -->
@@ -1983,16 +2316,15 @@
               <!-- Screen notch / camera dot -->
               <circle cx="34" cy="47" r="3" fill="#1e293b" />
 
-              <!-- LEFT THUMB: Back / Lean Button -->
+              <!-- LEFT THUMB: Brake Button -->
               <g transform="translate(70, 47)">
-                <circle cx="0" cy="0" r="22" fill="rgba(30, 58, 138, 0.7)" stroke="#60a5fa" stroke-width="2" />
-                <text x="0" y="4" font-size="14" font-weight="900" fill="#fff" text-anchor="middle">◀</text>
-                <text x="0" y="18" font-size="7" font-weight="900" fill="#93c5fd" text-anchor="middle">BACK</text>
+                <circle cx="0" cy="0" r="22" fill="rgba(185, 28, 28, 0.7)" stroke="#f87171" stroke-width="2" />
+                <text x="0" y="5" font-size="13" font-weight="900" fill="#fff" text-anchor="middle">🛑</text>
+                <text x="0" y="18" font-size="7" font-weight="900" fill="#fca5a5" text-anchor="middle">BRAKE</text>
                 <!-- Finger touch circle animation -->
-                <circle cx="0" cy="0" r="25" fill="none" stroke="#60a5fa" stroke-width="1" opacity="0.6" />
+                <circle cx="0" cy="0" r="25" fill="none" stroke="#f87171" stroke-width="1" opacity="0.6" />
               </g>
-              <text x="70" y="80" font-size="8.5" font-weight="800" fill="#93c5fd" text-anchor="middle">LEFT
-                THUMB</text>
+              <text x="70" y="80" font-size="8.5" font-weight="800" fill="#fca5a5" text-anchor="middle">LEFT THUMB (BRAKE)</text>
 
               <!-- Center Game Screen Preview -->
               <line x1="125" y1="20" x2="125" y2="75" stroke="rgba(255,255,255,0.1)" stroke-dasharray="2,2" />
@@ -2000,12 +2332,12 @@
               <text x="170" y="48" font-size="9" font-weight="900" fill="#fff" text-anchor="middle">RACE TRACK</text>
               <line x1="215" y1="20" x2="215" y2="75" stroke="rgba(255,255,255,0.1)" stroke-dasharray="2,2" />
 
-              <!-- RIGHT THUMB: Side-by-side Brake & Gas Buttons -->
-              <!-- Brake Button -->
+              <!-- RIGHT THUMB: Side-by-side Back & Gas Buttons -->
+              <!-- Back Button -->
               <g transform="translate(245, 47)">
-                <circle cx="0" cy="0" r="18" fill="rgba(185, 28, 28, 0.7)" stroke="#f87171" stroke-width="2" />
-                <text x="0" y="4" font-size="12" font-weight="900" fill="#fff" text-anchor="middle">🛑</text>
-                <text x="0" y="16" font-size="6.5" font-weight="900" fill="#fca5a5" text-anchor="middle">BRAKE</text>
+                <circle cx="0" cy="0" r="18" fill="rgba(30, 58, 138, 0.7)" stroke="#60a5fa" stroke-width="2" />
+                <text x="0" y="4" font-size="12" font-weight="900" fill="#fff" text-anchor="middle">◀</text>
+                <text x="0" y="16" font-size="6.5" font-weight="900" fill="#93c5fd" text-anchor="middle">BACK</text>
               </g>
               <!-- Gas Button -->
               <g transform="translate(290, 47)">
@@ -2014,8 +2346,7 @@
                 <text x="0" y="17" font-size="6.5" font-weight="900" fill="#fed7aa" text-anchor="middle">GAS</text>
                 <circle cx="0" cy="0" r="23" fill="none" stroke="#fb923c" stroke-width="1" opacity="0.6" />
               </g>
-              <text x="268" y="80" font-size="8.5" font-weight="800" fill="#fed7aa" text-anchor="middle">RIGHT
-                THUMB</text>
+              <text x="268" y="80" font-size="8.5" font-weight="800" fill="#fed7aa" text-anchor="middle">RIGHT THUMB (BACK & GAS)</text>
             </svg>
           </div>
 
@@ -2081,7 +2412,7 @@
   </div>
 
   <!-- STUNT TOAST -->
-  <div id="stunt-toast">★ BACKFLIP! +500 ★</div>
+  <div id="stunt-toast" style="display:none">★ BACKFLIP! +500 ★</div>
 
   <!-- CRASH SCREEN -->
   <div id="screen-crash" class="modal-overlay hidden" style="display:none">
@@ -2119,20 +2450,27 @@
 
   <!-- HUD -->
   <div id="hud" style="display:none">
-    <!-- Left info cluster (Level, Timer, High-Contrast Speedometer) -->
-    <div class="hud-group hud-left">
-      <div class="hud-pill">🎮 <span id="hud-level-name">Level 1</span></div>
-      <div class="hud-pill">⏱ <span id="hud-timer">0.00s</span></div>
-      <div class="hud-pill hud-speedo" id="hud-speed-pill">
-        <span class="speedo-icon">⚡</span>
-        <span id="hud-speed-val">0</span>
-        <span class="speedo-unit">km/h</span>
+    <!-- Top Bar: Left Stats (Time, Speed) & Center Info (Level, Song) -->
+    <div class="hud-top-bar">
+      <!-- Left: Time (prominently shown on mobile and desktop) & Speedometer -->
+      <div class="hud-stats-left">
+        <div class="hud-pill">⏱ <span id="hud-timer">0.00s</span></div>
+        <div class="hud-pill hud-speedo" id="hud-speed-pill">
+          <span class="speedo-icon">⚡</span>
+          <span id="hud-speed-val">0</span>
+          <span class="speedo-unit">km/h</span>
+        </div>
+      </div>
+
+      <!-- Center: Level Name & Song Track in Desktop View -->
+      <div class="hud-center-info">
+        <div class="hud-pill" id="hud-level-pill">🎮 <span id="hud-level-name">Level 1</span></div>
+        <div class="hud-pill" id="hud-song-pill">🎵 <span id="hud-song-name">Track 1</span></div>
       </div>
     </div>
 
-    <!-- Right action cluster (Song pill, Pause, Restart, Mute, Menu) -->
-    <div class="hud-group hud-right">
-      <div class="hud-pill" id="hud-song-pill">🎵 <span id="hud-song-name">Track 1</span></div>
+    <!-- Right Side: All Action Items Vertically Stacked at Top (Pause, Restart, Music, Menu) -->
+    <div class="hud-actions-right">
       <div class="hud-pill hud-btn-action" id="btn-pause-hud" onclick="game.togglePause()" title="Pause (P)">
         <span>⏸</span><span class="hud-btn-text"> Pause</span>
       </div>
@@ -2145,29 +2483,32 @@
       <div class="hud-pill hud-btn-action" id="btn-menu-hud" onclick="game.goToMenu()" title="Menu">
         <span>🏠</span><span class="hud-btn-text"> Menu</span>
       </div>
+      <div class="hud-pill hud-btn-action hud-landscape-pill" id="btn-landscape-hud" onclick="game.requestLandscape()" title="Rotate to Landscape">
+        <span class="hud-landscape-icon">📱↻</span><span class="hud-btn-text"> Rotate</span>
+      </div>
     </div>
   </div>
   <div id="progress-bar-wrap" style="display:none">
     <div id="progress-bar-fill"></div>
   </div>
 
-  <!-- ON-SCREEN CONTROLS: Left = BACK/LEAN | Right = BRAKE and GAS Side-by-Side -->
+  <!-- ON-SCREEN CONTROLS: Left = BRAKE | Right = BACK and GAS Side-by-Side -->
   <div id="on-screen-controls">
-    <!-- LEFT SIDE: Backward / Lean Back (Left Thumb) -->
+    <!-- LEFT SIDE: Brake (Left Thumb) -->
     <div class="ctrl-side-left">
-      <div class="ctrl-btn ctrl-btn-back" id="ctrl-left" onpointerdown="game._ctrlPress('left')"
-        onpointerup="game._ctrlRelease('left')" onpointerleave="game._ctrlRelease('left')"
-        onpointercancel="game._ctrlRelease('left')">◀</div>
-      <div class="ctrl-lbl">BACK</div>
+      <div class="ctrl-btn ctrl-btn-brake" id="ctrl-brake" onpointerdown="game._ctrlPress('brake')"
+        onpointerup="game._ctrlRelease('brake')" onpointerleave="game._ctrlRelease('brake')"
+        onpointercancel="game._ctrlRelease('brake')">🛑</div>
+      <div class="ctrl-lbl">BRAKE</div>
     </div>
 
-    <!-- RIGHT SIDE: Brake and Gas Side-by-Side (Right Thumb) -->
+    <!-- RIGHT SIDE: Back and Gas Side-by-Side (Right Thumb) -->
     <div class="ctrl-side-right">
       <div class="ctrl-item">
-        <div class="ctrl-btn ctrl-btn-brake" id="ctrl-brake" onpointerdown="game._ctrlPress('brake')"
-          onpointerup="game._ctrlRelease('brake')" onpointerleave="game._ctrlRelease('brake')"
-          onpointercancel="game._ctrlRelease('brake')">🛑</div>
-        <div class="ctrl-lbl">BRAKE</div>
+        <div class="ctrl-btn ctrl-btn-back" id="ctrl-left" onpointerdown="game._ctrlPress('left')"
+          onpointerup="game._ctrlRelease('left')" onpointerleave="game._ctrlRelease('left')"
+          onpointercancel="game._ctrlRelease('left')">◀</div>
+        <div class="ctrl-lbl">BACK</div>
       </div>
       <div class="ctrl-item">
         <div class="ctrl-btn ctrl-btn-fwd" id="ctrl-right" onpointerdown="game._ctrlPress('right')"

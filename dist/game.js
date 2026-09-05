@@ -546,11 +546,52 @@ class DriveMadGame {
     const toast = document.getElementById('stunt-toast');
     if (!toast) return;
     toast.textContent = text;
+    toast.style.display = 'block';
     toast.classList.add('show');
     if (this._stuntToastTimer) clearTimeout(this._stuntToastTimer);
     this._stuntToastTimer = setTimeout(() => {
       toast.classList.remove('show');
-    }, 1800);
+      toast.style.display = 'none';
+    }, 2200);
+  }
+
+  requestLandscape() {
+    const docEl = document.documentElement;
+    const reqFullscreen = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+
+    const tryLockOrientation = () => {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').then(() => {
+          this._showStuntToast('Landscape Mode Activated! 🏎️');
+        }).catch(() => {
+          this._showStuntToast('Rotate device sideways for Landscape! 📱↪️');
+        });
+      } else {
+        this._showStuntToast('Rotate device sideways for Landscape! 📱↪️');
+      }
+    };
+
+    if (reqFullscreen && !document.fullscreenElement) {
+      reqFullscreen.call(docEl).then(() => {
+        tryLockOrientation();
+      }).catch(() => {
+        tryLockOrientation();
+      });
+    } else {
+      tryLockOrientation();
+    }
+  }
+
+  dismissLandscapeNotice() {
+    const notice = document.getElementById('mobile-landscape-notice');
+    if (notice) {
+      notice.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+      notice.style.opacity = '0';
+      notice.style.transform = 'translateY(-12px) scale(0.95)';
+      setTimeout(() => {
+        notice.style.display = 'none';
+      }, 300);
+    }
   }
 
   _loop(ts) {
