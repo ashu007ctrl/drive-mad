@@ -795,19 +795,30 @@
     /* Right Side Action Column (All buttons: Pause, Restart, Music, Menu) */
     .hud-actions-right {
       position: absolute;
-      top: max(env(safe-area-inset-top), 8px);
-      right: max(env(safe-area-inset-right), 12px);
+      top: max(env(safe-area-inset-top), 10px);
+      right: max(env(safe-area-inset-right), 32px); /* Shifted generously to the left so all descriptions are fully visible */
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 7px;
+      gap: 8px;
       pointer-events: none;
       z-index: 52;
     }
 
-    .hud-btn-action {
+    .hud-actions-right .hud-btn-action {
+      min-width: 106px;
+      padding: 6px 14px;
+      box-sizing: border-box;
+      white-space: nowrap;
+      justify-content: flex-start;
+      gap: 8px;
       cursor: pointer;
       transition: transform .12s, background .15s, box-shadow .15s;
+    }
+
+    .hud-actions-right .hud-btn-text {
+      white-space: nowrap;
+      letter-spacing: 0.3px;
     }
 
     .hud-btn-action:hover {
@@ -839,17 +850,24 @@
       background: rgba(255, 255, 255, .25);
     }
 
-    /* Small Landscape Icon in HUD for Mobile View */
+    /* Small Landscape / Portrait Icon in HUD for Mobile View */
     .hud-landscape-pill {
       display: none !important;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px), (max-height: 500px) {
       .hud-landscape-pill {
         display: flex !important;
         border-color: rgba(56, 189, 248, 0.5) !important;
         color: #38bdf8 !important;
       }
+    }
+
+    /* In mobile landscape mode, highlight the button to return to original portrait mode */
+    .hud-landscape-pill.is-landscape,
+    .landscape-btn.is-landscape {
+      border-color: rgba(251, 146, 60, 0.65) !important;
+      color: #fed7aa !important;
     }
 
     #progress-bar-wrap {
@@ -904,8 +922,8 @@
 
       .hud-actions-right {
         top: max(env(safe-area-inset-top), 6px);
-        right: max(env(safe-area-inset-right), 8px);
-        gap: 5px;
+        right: max(env(safe-area-inset-right), 14px);
+        gap: 6px;
       }
 
       .hud-actions-right .hud-btn-text {
@@ -913,8 +931,9 @@
       }
 
       .hud-actions-right .hud-btn-action {
-        width: 32px;
-        height: 32px;
+        min-width: 0;
+        width: 33px;
+        height: 33px;
         padding: 0;
         display: flex;
         align-items: center;
@@ -937,12 +956,14 @@
 
       .hud-actions-right {
         top: max(env(safe-area-inset-top), 4px);
+        right: max(env(safe-area-inset-right), 16px);
         gap: 4px;
       }
 
       .hud-actions-right .hud-btn-action {
-        width: 27px;
-        height: 27px;
+        min-width: 0;
+        width: 28px;
+        height: 28px;
         font-size: 11px;
       }
 
@@ -1517,7 +1538,7 @@
       display: none !important;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px), (max-height: 500px) {
       #screen-menu {
         padding-top: max(env(safe-area-inset-top, 24px), 48px);
       }
@@ -2069,8 +2090,8 @@
       <span class="about-text">About</span>
     </div>
 
-    <!-- Top Right Landscape Mode Icon for Mobile View -->
-    <div id="btn-landscape-menu" class="landscape-btn" onclick="game.requestLandscape()" title="Landscape Mode (Better View)">
+    <!-- Top Right Landscape/Portrait Mode Icon for Mobile View -->
+    <div id="btn-landscape-menu" class="landscape-btn" onclick="game.toggleOrientation()" title="Toggle Orientation">
       <span class="landscape-icon-box">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="6" width="18" height="12" rx="2.5" />
@@ -2483,7 +2504,7 @@
       <div class="hud-pill hud-btn-action" id="btn-menu-hud" onclick="game.goToMenu()" title="Menu">
         <span>🏠</span><span class="hud-btn-text"> Menu</span>
       </div>
-      <div class="hud-pill hud-btn-action hud-landscape-pill" id="btn-landscape-hud" onclick="game.requestLandscape()" title="Rotate to Landscape">
+      <div class="hud-pill hud-btn-action hud-landscape-pill" id="btn-landscape-hud" onclick="game.toggleOrientation()" title="Toggle Orientation">
         <span class="hud-landscape-icon">📱↻</span><span class="hud-btn-text"> Rotate</span>
       </div>
     </div>

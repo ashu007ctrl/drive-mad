@@ -575,7 +575,7 @@ const LEVELS = [
       { type: 'bridge', x: 45, y: 2.4, w: 20, sag: 1.5 },
       { type: 'flat', x: 65, y: 2.4, w: 4 },
       { type: 'gap', x: 69, w: 15 },
-      { type: 'moving', x: 73.5, y: 2.4, w: 7.0, range: 2.5, speed: 1.5 },
+      { type: 'moving', x: 72.6, y: 2.4, w: 7.8, range: 2.5, speed: 1.5 },
       { type: 'flat', x: 84, y: 2.4, w: 4 },
       { type: 'ramp', x: 88, y: 2.4, w: 6, rise: 2.8 },
       { type: 'flat', x: 94, y: 5.2, w: 3 },

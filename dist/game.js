@@ -85,6 +85,7 @@ class DriveMadGame {
     } else {
       this.PPU = Math.min(window.innerWidth / 16, window.innerHeight / 9.5);
     }
+    this._updateOrientationButtons();
   }
 
   _bindInput() {
@@ -555,6 +556,15 @@ class DriveMadGame {
     }, 2200);
   }
 
+  toggleOrientation() {
+    const isLandscape = window.innerWidth > window.innerHeight;
+    if (isLandscape) {
+      this.requestPortrait();
+    } else {
+      this.requestLandscape();
+    }
+  }
+
   requestLandscape() {
     const docEl = document.documentElement;
     const reqFullscreen = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
@@ -563,6 +573,7 @@ class DriveMadGame {
       if (screen.orientation && screen.orientation.lock) {
         screen.orientation.lock('landscape').then(() => {
           this._showStuntToast('Landscape Mode Activated! 🏎️');
+          this._updateOrientationButtons();
         }).catch(() => {
           this._showStuntToast('Rotate device sideways for Landscape! 📱↪️');
         });
@@ -579,6 +590,74 @@ class DriveMadGame {
       });
     } else {
       tryLockOrientation();
+    }
+  }
+
+  requestPortrait() {
+    const exitFS = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+
+    const tryLockPortrait = () => {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('portrait').then(() => {
+          this._showStuntToast('Portrait Mode Activated! 📱');
+          this._updateOrientationButtons();
+        }).catch(() => {
+          if (screen.orientation && screen.orientation.unlock) {
+            try { screen.orientation.unlock(); } catch(e) {}
+          }
+          this._showStuntToast('Rotate device upright for Portrait! 📱⬆️');
+        });
+      } else {
+        this._showStuntToast('Rotate device upright for Portrait! 📱⬆️');
+      }
+    };
+
+    if (exitFS && document.fullscreenElement) {
+      exitFS.call(document).then(() => {
+        tryLockPortrait();
+      }).catch(() => {
+        tryLockPortrait();
+      });
+    } else {
+      tryLockPortrait();
+    }
+  }
+
+  _updateOrientationButtons() {
+    const isLandscape = window.innerWidth > window.innerHeight;
+    const isMobile = window.innerWidth < 920 || window.innerHeight < 500;
+
+    // Update Menu screen orientation button
+    const menuBtn = document.getElementById('btn-landscape-menu');
+    if (menuBtn) {
+      const textEl = menuBtn.querySelector('.landscape-btn-text');
+      if (isLandscape && isMobile) {
+        menuBtn.title = 'Switch to Portrait Mode';
+        if (textEl) textEl.textContent = 'Portrait';
+        menuBtn.classList.add('is-landscape');
+      } else {
+        menuBtn.title = 'Switch to Landscape Mode';
+        if (textEl) textEl.textContent = 'Landscape';
+        menuBtn.classList.remove('is-landscape');
+      }
+    }
+
+    // Update in-game HUD orientation button
+    const hudBtn = document.getElementById('btn-landscape-hud');
+    if (hudBtn) {
+      const iconEl = hudBtn.querySelector('.hud-landscape-icon');
+      const textEl = hudBtn.querySelector('.hud-btn-text');
+      if (isLandscape && isMobile) {
+        hudBtn.title = 'Switch to Portrait Mode';
+        if (iconEl) iconEl.textContent = '📱⬆';
+        if (textEl) textEl.textContent = ' Portrait';
+        hudBtn.classList.add('is-landscape');
+      } else {
+        hudBtn.title = 'Switch to Landscape Mode';
+        if (iconEl) iconEl.textContent = '📱↻';
+        if (textEl) textEl.textContent = ' Rotate';
+        hudBtn.classList.remove('is-landscape');
+      }
     }
   }
 
