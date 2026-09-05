@@ -943,6 +943,32 @@
       }
     }
 
+    /* Mobile Portrait Mode: Speedometer shown directly below Time on the left side */
+    @media (max-width: 860px) and (orientation: portrait) {
+      .hud-top-bar {
+        align-items: flex-start;
+      }
+
+      .hud-stats-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+
+      .hud-center-info {
+        top: 0;
+      }
+    }
+
+    /* Mobile Landscape Mode: Speedometer remains side-by-side with Time */
+    @media (max-width: 860px) and (orientation: landscape), (max-height: 500px) {
+      .hud-stats-left {
+        flex-direction: row;
+        align-items: center;
+        gap: 5px;
+      }
+    }
+
     /* Extra optimization for short screen heights (e.g. mobile landscape) */
     @media(max-height:420px) {
       .hud-top-bar {
