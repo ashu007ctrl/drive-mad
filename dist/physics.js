@@ -334,13 +334,15 @@ class PhysicsWorld {
       this.driveForce = cfg.engineForce;
       this.brakeForce = 0;
       if (anyWheelContact) {
-        car.applyTorque(-cfg.tiltTorque * 0.7, dt); // slight forward tilt on ground
+        // Natural squat under forward acceleration keeps the rear wheel firmly planted
+        car.applyTorque(cfg.tiltTorque * 0.15, dt);
       }
     } else if (isBackward && !isForward) {
       this.driveForce = -cfg.reverseForce;
       this.brakeForce = 0;
       if (anyWheelContact) {
-        car.applyTorque(cfg.tiltTorque * 0.7, dt);  // slight backward tilt on ground
+        // Natural forward dive under reverse keeps wheels stable
+        car.applyTorque(-cfg.tiltTorque * 0.15, dt);
       }
     } else {
       this.driveForce = 0;
@@ -430,14 +432,12 @@ class PhysicsWorld {
       wheel.contact = false;
       const wPos = wheel.worldPos(car);
 
+      let bestHit = null;
+      let bestLine = null;
+
       surfaces.forEach(line => {
         const hit = this._raycastWheel(wPos, cfg.wheelRadius, line);
         if (hit) {
-          wheel.contact = true;
-          wheel.contactNormal = hit.normal;
-          wheel.contactPoint = hit.point;
-          wheel.suspensionComp = Math.min(1, Math.max(0, hit.penetration / (cfg.wheelRadius * 0.6)));
-
           // Turbo Boost Pad trigger
           if (line.isBoost) {
             car.vel.x += (line.boostPower || 32) * dt * 4;
@@ -450,77 +450,97 @@ class PhysicsWorld {
             car.bounceTime = 0.4;
           }
 
-          // Push car out of ground
-          car.pos.x += hit.normal.x * hit.penetration;
-          car.pos.y += hit.normal.y * hit.penetration;
-
-          // Relative velocity calculation
-          const r = wPos.sub(car.pos);
-          let vSurface = new Vec2();
-          if (line.movingPlatform) {
-            vSurface.x = line.movingPlatform.vx;
-            vSurface.y = line.movingPlatform.vy || 0;
+          if (!bestHit || hit.penetration > bestHit.penetration) {
+            bestHit = hit;
+            bestLine = line;
           }
-
-          const vRel = new Vec2(
-            car.vel.x - car.angVel * r.y - vSurface.x,
-            car.vel.y + car.angVel * r.x - vSurface.y
-          );
-
-          const vN = vRel.dot(hit.normal);
-          if (vN < 0) {
-            const j = -(1 + car.restitution) * vN * car.mass * 0.55;
-            const imp = hit.normal.scale(j);
-            car.vel.x += imp.x * car.invM;
-            car.vel.y += imp.y * car.invM;
-            car.angVel += (r.x * imp.y - r.y * imp.x) * car.invI;
-          }
-
-          // Tangent & Ground Friction
-          const tang = new Vec2(hit.normal.y, -hit.normal.x);
-          const vT = vRel.dot(tang);
-          const fricMultiplier = (this.driveForce === 0) ? 1.6 : cfg.friction; // stronger drag when released
-          const fric = -vT * fricMultiplier * car.mass * 0.5;
-          const fImp = tang.scale(fric * dt);
-          car.vel.x += fImp.x * car.invM;
-          car.vel.y += fImp.y * car.invM;
-          car.angVel += (r.x * fImp.y - r.y * fImp.x) * car.invI;
-
-          // Forward / Reverse drive force along surface ONLY when pressed
-          if (this.driveForce !== 0) {
-            const fwdTang = tang.x < 0 ? tang.scale(-1) : tang;
-            const driveDir = this.driveForce > 0 ? fwdTang : fwdTang.scale(-1);
-            const forceMag = Math.abs(this.driveForce);
-            const driveImp = driveDir.scale(forceMag * dt * car.invM);
-            car.vel.x += driveImp.x;
-            car.vel.y += driveImp.y;
-          }
-
-          // Brake force — heavy deceleration when brake is active
-          if (this.brakeForce > 0) {
-            const brakeFric = -vT * 4.5 * car.mass * 0.5;
-            const brakeImp = tang.scale(brakeFric * dt);
-            car.vel.x += brakeImp.x * car.invM;
-            car.vel.y += brakeImp.y * car.invM;
-            car.angVel += (r.x * brakeImp.y - r.y * brakeImp.x) * car.invI;
-            // Also dampen linear velocity directly
-            car.vel.x *= Math.pow(0.92, dt * 60);
-            car.vel.y *= Math.pow(0.96, dt * 60);
-          }
-
-          // Transfer weight onto see-saws
-          if (line.seeSaw) {
-            const offset = wPos.x - line.seeSaw.pivot.x;
-            line.seeSaw.applyTorque(car.mass * Math.abs(this.gravity) * offset * 0.15, dt);
-          }
-
-          // Visual spin
-          wheel.spin += (vT / cfg.wheelRadius) * dt;
         }
       });
 
-      if (!wheel.contact) {
+      if (bestHit) {
+        const hit = bestHit;
+        const line = bestLine;
+
+        wheel.contact = true;
+        wheel.contactNormal = hit.normal;
+        wheel.contactPoint = hit.point;
+        wheel.suspensionComp = Math.min(1, Math.max(0, hit.penetration / (cfg.wheelRadius * 0.6)));
+
+        // Push car out of ground (single resolution per wheel avoids track seam double-kicks)
+        car.pos.x += hit.normal.x * hit.penetration;
+        car.pos.y += hit.normal.y * hit.penetration;
+
+        // Relative velocity calculation
+        const r = wPos.sub(car.pos);
+        let vSurface = new Vec2();
+        if (line.movingPlatform) {
+          vSurface.x = line.movingPlatform.vx;
+          vSurface.y = line.movingPlatform.vy || 0;
+        }
+
+        const vRel = new Vec2(
+          car.vel.x - car.angVel * r.y - vSurface.x,
+          car.vel.y + car.angVel * r.x - vSurface.y
+        );
+
+        const vN = vRel.dot(hit.normal);
+        if (vN < 0) {
+          const j = -(1 + car.restitution) * vN * car.mass * 0.55;
+          const imp = hit.normal.scale(j);
+          car.vel.x += imp.x * car.invM;
+          car.vel.y += imp.y * car.invM;
+          car.angVel += (r.x * imp.y - r.y * imp.x) * car.invI;
+        }
+
+        // Tangent & Ground Friction
+        const tang = new Vec2(hit.normal.y, -hit.normal.x);
+        const vT = vRel.dot(tang);
+        const fricMultiplier = (this.driveForce === 0) ? 1.6 : cfg.friction; // stronger drag when released
+        const fric = -vT * fricMultiplier * car.mass * 0.5;
+        const fImp = tang.scale(fric * dt);
+        car.vel.x += fImp.x * car.invM;
+        car.vel.y += fImp.y * car.invM;
+        car.angVel += (r.x * fImp.y - r.y * fImp.x) * car.invI;
+
+        // Forward / Reverse drive force along surface ONLY when pressed
+        if (this.driveForce !== 0) {
+          const fwdTang = tang.x < 0 ? tang.scale(-1) : tang;
+          const driveDir = this.driveForce > 0 ? fwdTang : fwdTang.scale(-1);
+          const forceMag = Math.abs(this.driveForce);
+          const driveImp = driveDir.scale(forceMag * dt * car.invM);
+          car.vel.x += driveImp.x;
+          car.vel.y += driveImp.y;
+        }
+
+        // Brake force — heavy deceleration when brake is active
+        if (this.brakeForce > 0) {
+          const brakeFric = -vT * 4.5 * car.mass * 0.5;
+          const brakeImp = tang.scale(brakeFric * dt);
+          car.vel.x += brakeImp.x * car.invM;
+          car.vel.y += brakeImp.y * car.invM;
+          car.angVel += (r.x * brakeImp.y - r.y * brakeImp.x) * car.invI;
+          // Also dampen linear velocity directly
+          car.vel.x *= Math.pow(0.92, dt * 60);
+          car.vel.y *= Math.pow(0.96, dt * 60);
+        }
+
+        // Transfer weight onto see-saws
+        if (line.seeSaw) {
+          const offset = wPos.x - line.seeSaw.pivot.x;
+          line.seeSaw.applyTorque(car.mass * Math.abs(this.gravity) * offset * 0.15, dt);
+        }
+
+        // Visual spin synchronized with ground motion
+        wheel.spin += (vT / cfg.wheelRadius) * dt;
+      } else {
+        // Continuous smooth spin when airborne or transitioning bumps
         wheel.suspensionComp = Math.max(0, wheel.suspensionComp - dt * 6);
+        if (this.driveForce !== 0) {
+          const airSpinRate = (this.driveForce > 0 ? 1 : -1) * Math.max(Math.abs(car.vel.x) / cfg.wheelRadius, 14);
+          wheel.spin += airSpinRate * dt;
+        } else {
+          wheel.spin += (car.vel.x / cfg.wheelRadius) * dt;
+        }
       }
     });
 
