@@ -79,9 +79,15 @@ class DriveMadGame {
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
     // World unit scale: responsive for mobile and desktop
-    const isMobile = window.innerWidth < 768;
+    const isMobile = window.innerWidth < 920 || window.innerHeight < 500;
+    const isPortrait = window.innerHeight > window.innerWidth;
     if (isMobile) {
-      this.PPU = Math.min(window.innerWidth / 12, window.innerHeight / 7.5);
+      if (isPortrait) {
+        // Slightly wider world visibility in portrait mode so the upcoming path is clear in advance
+        this.PPU = Math.min(window.innerWidth / 13.5, window.innerHeight / 8);
+      } else {
+        this.PPU = Math.min(window.innerWidth / 16, window.innerHeight / 8);
+      }
     } else {
       this.PPU = Math.min(window.innerWidth / 16, window.innerHeight / 9.5);
     }
@@ -735,9 +741,10 @@ class DriveMadGame {
     document.getElementById('progress-bar-fill').style.width = `${prog * 100}%`;
 
     // Camera follow with lookahead and dynamic mobile framing
-    const isMobile = window.innerWidth < 768;
-    const targetX = car.pos.x + Math.max(-1, Math.min(3.5, car.vel.x * 0.16));
-    const targetY = car.pos.y + (isMobile ? 2.35 : 1.8);
+    const isMobile = window.innerWidth < 920 || window.innerHeight < 500;
+    const isPortrait = window.innerHeight > window.innerWidth;
+    const targetX = car.pos.x + Math.max(-1.2, Math.min(3.5, car.vel.x * 0.18));
+    const targetY = car.pos.y + (isPortrait ? 2.5 : (isMobile ? 2.1 : 1.8));
     this.camX += (targetX - this.camX) * Math.min(1, dt * 6.5);
     this.camY += (targetY - this.camY) * Math.min(1, dt * 5);
 
@@ -966,7 +973,15 @@ class DriveMadGame {
       this.screenShake *= Math.pow(0.86, dt * 60);
     }
 
-    const cx = W / 2 - this.camX * PPU + shakeX;
+    // Slightly shift the view horizontally so the upcoming path ahead (to the right) is much clearer
+    const isMobile = W < 920 || H < 500;
+    const isPortrait = H > W;
+    // Desktop: car sits at ~38% width (62% ahead)
+    // Mobile Portrait: car sits at ~34% width (66% ahead on narrow screens)
+    const screenShiftRatio = isPortrait ? 0.16 : 0.12;
+    const screenCenterX = W * (0.5 - screenShiftRatio);
+
+    const cx = screenCenterX - this.camX * PPU + shakeX;
     const cy = H / 2 + this.camY * PPU + shakeY;
 
     const toScreen = (wx, wy) => ({
