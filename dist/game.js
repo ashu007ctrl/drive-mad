@@ -1346,26 +1346,65 @@ class DriveMadGame {
       const w = (s.b.x - s.a.x) * PPU;
       const h = PPU * 0.5;
 
-      const railStart = toScreen(mp.baseX - mp.range, mp.y);
-      const railEnd = toScreen(mp.baseX + mp.range + mp.w, mp.y);
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath();
-      ctx.moveTo(railStart.x, railStart.y + h * 0.5);
-      ctx.lineTo(railEnd.x, railEnd.y + h * 0.5);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      if (mp.rangeY && mp.rangeY > 0) {
+        // Vertical hydraulic elevator lift rails & tower framework
+        const topScreen = toScreen(mp.x, mp.baseY + mp.rangeY + 0.8);
+        const btmScreen = toScreen(mp.x, mp.baseY - mp.rangeY - 1.5);
 
-      ctx.fillStyle = '#0288d1';
-      ctx.strokeStyle = '#01579b';
-      ctx.lineWidth = 2;
-      ctx.fillRect(p0.x, p0.y, w, h);
-      ctx.strokeRect(p0.x, p0.y, w, h);
+        // Heavy vertical guide columns (left and right)
+        ctx.strokeStyle = '#ffb300';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 6]);
+        ctx.beginPath();
+        ctx.moveTo(p0.x + 4, topScreen.y);
+        ctx.lineTo(p0.x + 4, btmScreen.y);
+        ctx.moveTo(p0.x + w - 4, topScreen.y);
+        ctx.lineTo(p0.x + w - 4, btmScreen.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
 
-      ctx.fillStyle = '#ffd54f';
-      for (let x = 4; x < w - 4; x += 14) {
-        ctx.fillRect(p0.x + x, p0.y + 2, 6, h - 4);
+        // Hydraulic central piston column
+        ctx.fillStyle = '#424242';
+        ctx.fillRect(p0.x + w * 0.5 - 5, p0.y + h, 10, Math.max(0, btmScreen.y - (p0.y + h)));
+        ctx.strokeStyle = '#757575';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(p0.x + w * 0.5 - 5, p0.y + h, 10, Math.max(0, btmScreen.y - (p0.y + h)));
+
+        // Industrial Elevator Deck
+        ctx.fillStyle = '#ff8f00';
+        ctx.strokeStyle = '#e65100';
+        ctx.lineWidth = 2.5;
+        ctx.fillRect(p0.x, p0.y, w, h);
+        ctx.strokeRect(p0.x, p0.y, w, h);
+
+        // Warning chevrons / stripes on deck
+        ctx.fillStyle = '#212121';
+        for (let x = 4; x < w - 4; x += 14) {
+          ctx.fillRect(p0.x + x, p0.y + 2, 6, h - 4);
+        }
+      } else {
+        // Horizontal rails
+        const railStart = toScreen(mp.baseX - mp.range, mp.y);
+        const railEnd = toScreen(mp.baseX + mp.range + mp.w, mp.y);
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(railStart.x, railStart.y + h * 0.5);
+        ctx.lineTo(railEnd.x, railEnd.y + h * 0.5);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#0288d1';
+        ctx.strokeStyle = '#01579b';
+        ctx.lineWidth = 2;
+        ctx.fillRect(p0.x, p0.y, w, h);
+        ctx.strokeRect(p0.x, p0.y, w, h);
+
+        ctx.fillStyle = '#ffd54f';
+        for (let x = 4; x < w - 4; x += 14) {
+          ctx.fillRect(p0.x + x, p0.y + 2, 6, h - 4);
+        }
       }
     });
   }
@@ -1375,14 +1414,15 @@ class DriveMadGame {
     this.physics.spinners.forEach(sp => {
       const p = toScreen(sp.pos.x, sp.pos.y);
       const r = sp.r * PPU;
+      const count = sp.arms || 4;
 
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(sp.angle);
 
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < count; i++) {
         ctx.save();
-        ctx.rotate((i * Math.PI) / 2);
+        ctx.rotate((i * Math.PI * 2) / count);
         ctx.fillStyle = '#d32f2f';
         ctx.strokeStyle = '#b71c1c';
         ctx.lineWidth = 2;

@@ -191,27 +191,37 @@ class SeeSaw {
 class MovingPlatform {
   constructor(seg) {
     this.baseX = seg.x;
+    this.baseY = seg.y;
     this.y = seg.y;
     this.w = seg.w;
-    this.range = seg.range || 5;
+    this.range = seg.range !== undefined ? seg.range : 5;
+    this.rangeY = seg.rangeY || 0;
     this.speed = seg.speed || 2;
-    this.time = 0;
+    this.time = seg.phase || 0;
     this.x = seg.x;
     this.vx = 0;
+    this.vy = 0;
   }
 
   update(dt) {
     this.time += dt * this.speed;
     const prevX = this.x;
-    this.x = this.baseX + Math.sin(this.time) * this.range;
+    const prevY = this.y;
+    if (this.range > 0) {
+      this.x = this.baseX + Math.sin(this.time) * this.range;
+    }
+    if (this.rangeY > 0) {
+      this.y = this.baseY + Math.sin(this.time) * this.rangeY;
+    }
     this.vx = (this.x - prevX) / dt;
+    this.vy = (this.y - prevY) / dt;
   }
 
   getSurface() {
     const a = new Vec2(this.x, this.y);
     const b = new Vec2(this.x + this.w, this.y);
     const normal = new Vec2(0, 1);
-    return { a, b, normal, vx: this.vx };
+    return { a, b, normal, vx: this.vx, vy: this.vy };
   }
 }
 
@@ -220,7 +230,8 @@ class SpinnerObstacle {
     this.pos = new Vec2(obs.x, obs.y);
     this.r = obs.r || 1.3;
     this.speed = obs.speed || 3;
-    this.angle = 0;
+    this.angle = obs.angle || 0;
+    this.arms = obs.arms || 4;
   }
 
   update(dt) {
@@ -228,10 +239,10 @@ class SpinnerObstacle {
   }
 
   getSegments() {
-    // 4 arms (cross shaped spinner)
     const arms = [];
-    for (let i = 0; i < 4; i++) {
-      const a = this.angle + (i * Math.PI) / 2;
+    const count = this.arms;
+    for (let i = 0; i < count; i++) {
+      const a = this.angle + (i * Math.PI * 2) / count;
       const end = new Vec2(this.pos.x + Math.cos(a) * this.r, this.pos.y + Math.sin(a) * this.r);
       arms.push({ a: this.pos.clone(), b: end, isObstacle: true });
     }
@@ -448,6 +459,7 @@ class PhysicsWorld {
           let vSurface = new Vec2();
           if (line.movingPlatform) {
             vSurface.x = line.movingPlatform.vx;
+            vSurface.y = line.movingPlatform.vy || 0;
           }
 
           const vRel = new Vec2(

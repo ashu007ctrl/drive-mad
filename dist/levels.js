@@ -846,85 +846,546 @@ const LEVELS = [
 
   // ══ WORLD 3: Forest (21-30) — Steeper hills, spinners ═══════════════════════
 
-  // 21: Deep valley
+  // 21: Emerald Gauntlet (Stage 3 Kickoff — Terraced Steps, Hydraulic Lift, Guilotines & Tandem See-Saws)
   {
-    name: 'Level 21', theme: 'forest', spawnX: 1.5, spawnY: 5, finishX: 88, segments: [
-      { type: 'flat', x: 0, y: 4, w: 10 },
-      { type: 'ramp', x: 10, y: 4, w: 8, rise: -2 },
-      { type: 'flat', x: 18, y: 2, w: 8 },
-      { type: 'ramp', x: 26, y: 2, w: 8, rise: 2 },
-      { type: 'flat', x: 34, y: 4, w: 6 },
-      { type: 'ramp', x: 40, y: 4, w: 8, rise: -2 },
-      { type: 'flat', x: 48, y: 2, w: 6 },
-      { type: 'ramp', x: 54, y: 2, w: 8, rise: 2 },
-      { type: 'flat', x: 62, y: 4, w: 28 },
-    ]
-  },
-
-  // 22: Bridge + bumps
-  {
-    name: 'Level 22', theme: 'forest', spawnX: 1.5, spawnY: 3, finishX: 92, segments: [
-      { type: 'flat', x: 0, y: 2, w: 10 },
-      { type: 'bump', x: 9, y: 2, w: 3, h: 0.40 },
-      { type: 'bridge', x: 13, y: 2, w: 18, sag: 1.3 },
-      { type: 'flat', x: 31, y: 2, w: 6 },
-      { type: 'bump', x: 35, y: 2, w: 3, h: 0.45 },
-      { type: 'flat', x: 39, y: 2, w: 6 },
-      { type: 'bridge', x: 45, y: 2, w: 20, sag: 1.4 },
-      { type: 'flat', x: 65, y: 2, w: 30 },
-    ]
-  },
-
-  // 23: Stepped mountain
-  {
-    name: 'Level 23', theme: 'forest', spawnX: 1.5, spawnY: 3, finishX: 100, segments: [
-      { type: 'flat', x: 0, y: 2, w: 8 },
-      { type: 'ramp', x: 8, y: 2, w: 5, rise: 1.2 },
-      { type: 'flat', x: 13, y: 3.2, w: 4 },
-      { type: 'ramp', x: 17, y: 3.2, w: 5, rise: 1.2 },
-      { type: 'flat', x: 22, y: 4.4, w: 8 },
-      { type: 'ramp', x: 30, y: 4.4, w: 6, rise: -1.2 },
-      { type: 'flat', x: 36, y: 3.2, w: 4 },
-      { type: 'ramp', x: 40, y: 3.2, w: 6, rise: -1.2 },
-      { type: 'flat', x: 46, y: 2, w: 6 },
-      { type: 'ramp', x: 52, y: 2, w: 5, rise: 1.5 },
-      { type: 'ramp', x: 57, y: 3.5, w: 5, rise: -1.5 },
-      { type: 'flat', x: 62, y: 2, w: 40 },
-    ]
-  },
-
-  // 24: Bridge valley
-  {
-    name: 'Level 24', theme: 'forest', spawnX: 1.5, spawnY: 3, finishX: 96, segments: [
-      { type: 'flat', x: 0, y: 2, w: 10 },
-      { type: 'ramp', x: 10, y: 2, w: 6, rise: 1.5 },
-      { type: 'bridge', x: 16, y: 3.5, w: 22, sag: 1.3 },
-      { type: 'ramp', x: 38, y: 3.5, w: 6, rise: -1.5 },
-      { type: 'flat', x: 44, y: 2, w: 6 },
-      { type: 'ramp', x: 50, y: 2, w: 6, rise: 1.2 },
-      { type: 'bridge', x: 56, y: 3.2, w: 18, sag: 1.2 },
-      { type: 'ramp', x: 74, y: 3.2, w: 6, rise: -1.2 },
-      { type: 'flat', x: 80, y: 2, w: 18 },
-    ]
-  },
-
-  // 25: Spinner dodge + gentle hill
-  {
-    name: 'Level 25', theme: 'forest', spawnX: 1.5, spawnY: 3, finishX: 96,
-    obstacles: [{ type: 'spinner', x: 32, y: 5.6, r: 1.0, speed: 1.6 }],
+    name: 'Level 21: Emerald Gauntlet', theme: 'forest', spawnX: 1.5, spawnY: 3, finishX: 560,
     segments: [
-      { type: 'flat', x: 0, y: 2, w: 12 },
-      { type: 'ramp', x: 12, y: 2, w: 5, rise: 1.8 },
-      { type: 'flat', x: 17, y: 3.8, w: 4 },
-      { type: 'ramp', x: 21, y: 3.8, w: 5, rise: -1.8 },
-      { type: 'flat', x: 26, y: 2, w: 16 },
-      { type: 'ramp', x: 42, y: 2, w: 5, rise: 1.8 },
-      { type: 'ramp', x: 47, y: 3.8, w: 5, rise: -1.8 },
-      { type: 'flat', x: 52, y: 2, w: 6 },
-      { type: 'ramp', x: 58, y: 2, w: 6, rise: 1.8 },
-      { type: 'flat', x: 64, y: 3.8, w: 6 },
-      { type: 'ramp', x: 70, y: 3.8, w: 6, rise: -1.8 },
-      { type: 'flat', x: 76, y: 2, w: 22 },
+      // ── Sector 1: The Washboard Moguls & Terraced Steps ──
+      { type: 'flat', x: 0, y: 2, w: 7 },
+      { type: 'bump', x: 7, y: 2, w: 3.5, h: 0.60 },
+      { type: 'flat', x: 10.5, y: 2, w: 2.5 },
+      { type: 'bump', x: 13, y: 2, w: 3.5, h: 0.68 },
+      { type: 'flat', x: 16.5, y: 2, w: 2.5 },
+      { type: 'bump', x: 19, y: 2, w: 3.5, h: 0.72 },
+      { type: 'flat', x: 22.5, y: 2, w: 4.5 },
+      // Terraced Steps (Stairs of Doom - feather throttle to climb)
+      { type: 'ramp', x: 27.0, y: 2.0, w: 2.5, rise: 1.2 },
+      { type: 'flat', x: 29.5, y: 3.2, w: 4.0 },
+      { type: 'ramp', x: 33.5, y: 3.2, w: 2.5, rise: 1.2 },
+      { type: 'flat', x: 36.0, y: 4.4, w: 4.0 },
+      { type: 'ramp', x: 40.0, y: 4.4, w: 2.5, rise: 1.2 },
+      { type: 'flat', x: 42.5, y: 5.6, w: 4.5 },
+      { type: 'ramp', x: 47.0, y: 5.6, w: 8.0, rise: -3.6 },
+      { type: 'flat', x: 55.0, y: 2.0, w: 12.0 },
+
+      // ── Sector 2: The Hydraulic Canopy Lift ──
+      { type: 'gap', x: 67.0, w: 13.0 },
+      { type: 'moving', x: 67.8, y: 4.25, w: 11.5, range: 0, rangeY: 2.25, speed: 1.1, phase: -1.57 },
+      { type: 'flat', x: 80.0, y: 6.5, w: 8.0 },
+      { type: 'bridge', x: 88.0, y: 6.5, w: 18.0, sag: 1.4 },
+      { type: 'flat', x: 106.0, y: 6.5, w: 4.0 },
+      { type: 'ramp', x: 110.0, y: 6.5, w: 8.0, rise: -4.1 },
+
+      // ── Sector 3: The Sawmill Guilotines ──
+      { type: 'flat', x: 118.0, y: 2.4, w: 6.0 },
+      { type: 'flat', x: 124.0, y: 2.4, w: 12.0 },
+      { type: 'flat', x: 136.0, y: 2.4, w: 4.0 },
+      { type: 'bump', x: 140.0, y: 2.4, w: 3.5, h: 0.52 },
+      { type: 'flat', x: 143.5, y: 2.4, w: 4.5 },
+      { type: 'flat', x: 148.0, y: 2.4, w: 20.0 },
+      { type: 'ramp', x: 168.0, y: 2.4, w: 6.0, rise: 2.0 },
+      { type: 'flat', x: 174.0, y: 4.4, w: 6.0 },
+
+      // ── Sector 4: Canopy Suspension Swings ──
+      { type: 'bridge', x: 180.0, y: 4.4, w: 22.0, sag: 2.0 },
+      { type: 'flat', x: 202.0, y: 4.4, w: 4.0 },
+      { type: 'ramp', x: 206.0, y: 4.4, w: 5.0, rise: 1.6 },
+      { type: 'flat', x: 211.0, y: 6.0, w: 4.0 },
+      { type: 'bridge', x: 215.0, y: 6.0, w: 20.0, sag: 1.8 },
+      { type: 'flat', x: 235.0, y: 6.0, w: 4.0 },
+      { type: 'ramp', x: 239.0, y: 6.0, w: 7.0, rise: -3.8 },
+
+      // ── Sector 5: Tandem Ridge See-Saws ──
+      { type: 'flat', x: 246.0, y: 2.2, w: 4.0 },
+      { type: 'gap', x: 250.0, w: 0.8 },
+      { type: 'see-saw', x: 250.8, y: 2.2, w: 10.0 },
+      { type: 'gap', x: 260.8, w: 0.8 },
+      { type: 'flat', x: 261.6, y: 2.2, w: 3.5 },
+      { type: 'gap', x: 265.1, w: 0.8 },
+      { type: 'see-saw', x: 265.9, y: 2.2, w: 10.0 },
+      { type: 'gap', x: 275.9, w: 0.8 },
+      { type: 'flat', x: 276.7, y: 2.2, w: 4.0 },
+      { type: 'ramp', x: 280.7, y: 2.2, w: 6.0, rise: 2.4 },
+      { type: 'flat', x: 286.7, y: 4.6, w: 3.5 },
+      { type: 'gap', x: 290.2, w: 0.8 },
+      { type: 'see-saw', x: 291.0, y: 4.6, w: 9.5 },
+      { type: 'gap', x: 300.5, w: 0.8 },
+      { type: 'ramp', x: 301.3, y: 4.6, w: 7.0, rise: -2.6 },
+      { type: 'flat', x: 308.3, y: 2.0, w: 7.0 },
+
+      // ── Sector 6: The Leap of Faith & Air-Braking ──
+      { type: 'boost', x: 315.3, y: 2.0, w: 6.0, rise: 2.0, power: 34 },
+      { type: 'gap', x: 321.3, w: 11.0 },
+      { type: 'ramp', x: 326.3, y: 4.0, w: 6.5, rise: -1.0 },
+      { type: 'flat', x: 332.8, y: 3.0, w: 13.5 },
+      { type: 'bump', x: 346.3, y: 3.0, w: 3.5, h: 0.58 },
+      { type: 'flat', x: 349.8, y: 3.0, w: 3.0 },
+      { type: 'bounce', x: 352.8, y: 3.0, w: 4.0, power: 10 },
+      { type: 'gap', x: 356.8, w: 1.2 },
+      { type: 'flat', x: 358.0, y: 4.2, w: 10.0 },
+      { type: 'ramp', x: 368.0, y: 4.2, w: 7.3, rise: -2.0 },
+      { type: 'flat', x: 375.3, y: 2.2, w: 10.0 },
+
+      // ── Sector 7: Dual Forest Skyway Ferries ──
+      { type: 'gap', x: 385.3, w: 15.0 },
+      { type: 'moving', x: 387.8, y: 2.2, w: 8.5, range: 2.4, speed: 1.5, phase: 0 },
+      { type: 'flat', x: 400.3, y: 2.2, w: 6.0 },
+      { type: 'bump', x: 406.3, y: 2.2, w: 3.5, h: 0.60 },
+      { type: 'flat', x: 409.8, y: 2.2, w: 5.0 },
+      { type: 'gap', x: 414.8, w: 15.0 },
+      { type: 'moving', x: 417.3, y: 2.2, w: 8.5, range: 2.4, speed: 1.6, phase: 3.14 },
+      { type: 'flat', x: 429.8, y: 2.2, w: 6.0 },
+      { type: 'bridge', x: 435.8, y: 2.2, w: 18.0, sag: 1.3 },
+      { type: 'flat', x: 453.8, y: 2.2, w: 5.0 },
+      { type: 'ramp', x: 458.8, y: 2.2, w: 6.0, rise: 2.4 },
+      { type: 'flat', x: 464.8, y: 4.6, w: 4.0 },
+
+      // ── Sector 8: The Emerald Coaster & Grand Finale ──
+      { type: 'ramp', x: 468.8, y: 4.6, w: 7.0, rise: 3.2 },
+      { type: 'flat', x: 475.8, y: 7.8, w: 3.5 },
+      { type: 'ramp', x: 479.3, y: 7.8, w: 7.0, rise: -4.6 },
+      { type: 'ramp', x: 486.3, y: 3.2, w: 6.0, rise: 2.8 },
+      { type: 'flat', x: 492.3, y: 6.0, w: 3.5 },
+      { type: 'ramp', x: 495.8, y: 6.0, w: 7.0, rise: -3.8 },
+      { type: 'bridge', x: 502.8, y: 2.2, w: 20.0, sag: 1.5 },
+      { type: 'flat', x: 522.8, y: 2.2, w: 4.0 },
+      { type: 'boost', x: 526.8, y: 2.2, w: 8.0, rise: 0, power: 30 },
+      { type: 'flat', x: 534.8, y: 2.2, w: 26.0 },
+    ],
+    obstacles: [
+      { type: 'spinner', x: 130.0, y: 6.1, r: 1.6, speed: 1.8 },
+      { type: 'spinner', x: 154.0, y: 6.1, r: 1.5, speed: 2.0 },
+      { type: 'spinner', x: 162.0, y: 6.1, r: 1.5, speed: -2.0 },
+      { type: 'spinner', x: 442.0, y: 5.0, r: 1.2, speed: 2.4 },
+    ]
+  },
+
+  // 22: Emerald Switchbacks & Lifts (Steep Switchbacks, Dual Elevators, Bridges & See-Saws)
+  {
+    name: 'Level 22: Emerald Switchbacks & Lifts', theme: 'forest', spawnX: 1.5, spawnY: 3, finishX: 560,
+    segments: [
+      // Sector 1: Moguls & Steep Switchback 1 (x: 0 - 75)
+      { type: 'flat', x: 0, y: 2, w: 7 },
+      { type: 'bump', x: 7, y: 2, w: 3.5, h: 0.58 },
+      { type: 'flat', x: 10.5, y: 2, w: 2.5 },
+      { type: 'bump', x: 13, y: 2, w: 3.5, h: 0.65 },
+      { type: 'flat', x: 16.5, y: 2, w: 4.5 },
+      { type: 'ramp', x: 21.0, y: 2.0, w: 6.5, rise: 3.5 },
+      { type: 'flat', x: 27.5, y: 5.5, w: 4.0 },
+      { type: 'ramp', x: 31.5, y: 5.5, w: 6.5, rise: -3.5 },
+      { type: 'flat', x: 38.0, y: 2.0, w: 3.0 },
+      { type: 'bump', x: 41.0, y: 2.0, w: 3.5, h: 0.62 },
+      { type: 'flat', x: 44.5, y: 2.0, w: 3.5 },
+      { type: 'ramp', x: 48.0, y: 2.0, w: 6.0, rise: 2.2 },
+      { type: 'flat', x: 54.0, y: 4.2, w: 4.0 },
+      { type: 'ramp', x: 58.0, y: 4.2, w: 6.0, rise: -2.0 },
+      { type: 'flat', x: 64.0, y: 2.2, w: 11.0 },
+
+      // Sector 2: Hydraulic Canopy Lift #1 (x: 75 - 145)
+      { type: 'gap', x: 75.0, w: 13.0 },
+      { type: 'moving', x: 75.8, y: 4.35, w: 11.5, range: 0, rangeY: 2.15, speed: 1.1, phase: -1.57 },
+      { type: 'flat', x: 88.0, y: 6.5, w: 6.0 },
+      { type: 'bridge', x: 94.0, y: 6.5, w: 20.0, sag: 1.6 },
+      { type: 'flat', x: 114.0, y: 6.5, w: 4.0 },
+      { type: 'ramp', x: 118.0, y: 6.5, w: 8.0, rise: -4.3 },
+      { type: 'flat', x: 126.0, y: 2.2, w: 19.0 },
+
+      // Sector 3: Steep S-Turn Ridge & First See-Saw (x: 145 - 220)
+      { type: 'ramp', x: 145.0, y: 2.2, w: 7.0, rise: 3.8 },
+      { type: 'flat', x: 152.0, y: 6.0, w: 3.5 },
+      { type: 'ramp', x: 155.5, y: 6.0, w: 7.0, rise: -3.8 },
+      { type: 'flat', x: 162.5, y: 2.2, w: 4.0 },
+      { type: 'gap', x: 166.5, w: 0.8 },
+      { type: 'see-saw', x: 167.3, y: 2.2, w: 10.0 },
+      { type: 'gap', x: 177.3, w: 0.8 },
+      { type: 'flat', x: 178.1, y: 2.2, w: 4.0 },
+      { type: 'bump', x: 182.1, y: 2.2, w: 3.5, h: 0.58 },
+      { type: 'flat', x: 185.6, y: 2.2, w: 3.5 },
+      { type: 'ramp', x: 189.1, y: 2.2, w: 6.5, rise: 3.0 },
+      { type: 'flat', x: 195.6, y: 5.2, w: 4.0 },
+      { type: 'ramp', x: 199.6, y: 5.2, w: 6.5, rise: -2.8 },
+      { type: 'flat', x: 206.1, y: 2.4, w: 13.9 },
+
+      // Sector 4: Canopy Suspension & Overhead Spinner (x: 220 - 295)
+      { type: 'bridge', x: 220.0, y: 2.4, w: 22.0, sag: 1.8 },
+      { type: 'flat', x: 242.0, y: 2.4, w: 5.0 },
+      { type: 'flat', x: 247.0, y: 2.4, w: 14.0 },
+      { type: 'bump', x: 261.0, y: 2.4, w: 3.5, h: 0.55 },
+      { type: 'flat', x: 264.5, y: 2.4, w: 4.0 },
+      { type: 'bridge', x: 268.5, y: 2.4, w: 18.0, sag: 1.5 },
+      { type: 'flat', x: 286.5, y: 2.4, w: 8.5 },
+
+      // Sector 5: Hydraulic Canopy Lift #2 (x: 295 - 370)
+      { type: 'gap', x: 295.0, w: 13.0 },
+      { type: 'moving', x: 295.8, y: 4.6, w: 11.5, range: 0, rangeY: 2.2, speed: 1.1, phase: -1.57 },
+      { type: 'flat', x: 308.0, y: 6.8, w: 6.0 },
+      { type: 'bridge', x: 314.0, y: 6.8, w: 20.0, sag: 1.5 },
+      { type: 'flat', x: 334.0, y: 6.8, w: 4.0 },
+      { type: 'ramp', x: 338.0, y: 6.8, w: 8.0, rise: -4.6 },
+      { type: 'flat', x: 346.0, y: 2.2, w: 24.0 },
+
+      // Sector 6: Tandem See-Saws across Ravine (x: 370 - 440)
+      { type: 'gap', x: 370.0, w: 0.8 },
+      { type: 'see-saw', x: 370.8, y: 2.2, w: 10.0 },
+      { type: 'gap', x: 380.8, w: 0.8 },
+      { type: 'flat', x: 381.6, y: 2.2, w: 3.5 },
+      { type: 'gap', x: 385.1, w: 0.8 },
+      { type: 'see-saw', x: 385.9, y: 2.2, w: 10.0 },
+      { type: 'gap', x: 395.9, w: 0.8 },
+      { type: 'flat', x: 396.7, y: 2.2, w: 4.0 },
+      { type: 'ramp', x: 400.7, y: 2.2, w: 6.0, rise: 2.4 },
+      { type: 'flat', x: 406.7, y: 4.6, w: 4.0 },
+      { type: 'ramp', x: 410.7, y: 4.6, w: 7.0, rise: -2.6 },
+      { type: 'flat', x: 417.7, y: 2.0, w: 22.3 },
+
+      // Sector 7: Turbo Boost Leap & Suspension Highway (x: 440 - 505)
+      { type: 'boost', x: 440.0, y: 2.0, w: 6.0, rise: 2.0, power: 34 },
+      { type: 'gap', x: 446.0, w: 5.0 },
+      { type: 'ramp', x: 451.0, y: 4.0, w: 6.5, rise: -1.0 },
+      { type: 'flat', x: 457.5, y: 3.0, w: 8.0 },
+      { type: 'bridge', x: 465.5, y: 3.0, w: 22.0, sag: 1.6 },
+      { type: 'flat', x: 487.5, y: 3.0, w: 4.0 },
+      { type: 'ramp', x: 491.5, y: 3.0, w: 6.0, rise: -1.0 },
+      { type: 'flat', x: 497.5, y: 2.0, w: 7.5 },
+
+      // Sector 8: Camel Hump Coaster & Grand Finish (x: 505 - 560)
+      { type: 'ramp', x: 505.0, y: 2.0, w: 6.5, rise: 3.2 },
+      { type: 'flat', x: 511.5, y: 5.2, w: 3.0 },
+      { type: 'ramp', x: 514.5, y: 5.2, w: 6.5, rise: -3.2 },
+      { type: 'ramp', x: 521.0, y: 2.0, w: 6.0, rise: 2.6 },
+      { type: 'flat', x: 527.0, y: 4.6, w: 3.0 },
+      { type: 'ramp', x: 530.0, y: 4.6, w: 6.5, rise: -2.6 },
+      { type: 'flat', x: 536.5, y: 2.0, w: 24.5 },
+    ],
+    obstacles: [
+      { type: 'spinner', x: 255.0, y: 6.2, r: 1.5, speed: 2.0 },
+      { type: 'spinner', x: 476.0, y: 6.2, r: 1.4, speed: 2.2 },
+    ]
+  },
+
+  // 23: Terraced Mountain Colossus (Steep Giant Stairs, Alpine Ridges & Skyway Ferry)
+  {
+    name: 'Level 23: Terraced Mountain Colossus', theme: 'forest', spawnX: 1.5, spawnY: 3, finishX: 570,
+    segments: [
+      // Sector 1: Washboard into 4-Tier Staircase (x: 0 - 80)
+      { type: 'flat', x: 0, y: 2, w: 7 },
+      { type: 'bump', x: 7, y: 2, w: 3.5, h: 0.58 },
+      { type: 'flat', x: 10.5, y: 2, w: 2.5 },
+      { type: 'bump', x: 13, y: 2, w: 3.5, h: 0.65 },
+      { type: 'flat', x: 16.5, y: 2, w: 3.5 },
+      { type: 'ramp', x: 20.0, y: 2.0, w: 2.5, rise: 1.2 },
+      { type: 'flat', x: 22.5, y: 3.2, w: 3.5 },
+      { type: 'ramp', x: 26.0, y: 3.2, w: 2.5, rise: 1.2 },
+      { type: 'flat', x: 28.5, y: 4.4, w: 3.5 },
+      { type: 'ramp', x: 32.0, y: 4.4, w: 2.5, rise: 1.2 },
+      { type: 'flat', x: 34.5, y: 5.6, w: 3.5 },
+      { type: 'ramp', x: 38.0, y: 5.6, w: 2.5, rise: 1.2 },
+      { type: 'flat', x: 40.5, y: 6.8, w: 4.5 },
+      { type: 'ramp', x: 45.0, y: 6.8, w: 7.5, rise: -4.6 },
+      { type: 'flat', x: 52.5, y: 2.2, w: 4.0 },
+      { type: 'bump', x: 56.5, y: 2.2, w: 3.5, h: 0.58 },
+      { type: 'flat', x: 60.0, y: 2.2, w: 3.0 },
+      { type: 'ramp', x: 63.0, y: 2.2, w: 6.0, rise: 2.4 },
+      { type: 'flat', x: 69.0, y: 4.6, w: 4.0 },
+      { type: 'ramp', x: 73.0, y: 4.6, w: 6.0, rise: -2.4 },
+      { type: 'flat', x: 79.0, y: 2.2, w: 11.0 },
+
+      // Sector 2: Alpine Ridge See-Saws (x: 90 - 165)
+      { type: 'ramp', x: 90.0, y: 2.2, w: 6.5, rise: 3.2 },
+      { type: 'flat', x: 96.5, y: 5.4, w: 3.5 },
+      { type: 'gap', x: 100.0, w: 0.8 },
+      { type: 'see-saw', x: 100.8, y: 5.4, w: 10.0 },
+      { type: 'gap', x: 110.8, w: 0.8 },
+      { type: 'flat', x: 111.6, y: 5.4, w: 3.5 },
+      { type: 'gap', x: 115.1, w: 0.8 },
+      { type: 'see-saw', x: 115.9, y: 5.4, w: 10.0 },
+      { type: 'gap', x: 125.9, w: 0.8 },
+      { type: 'flat', x: 126.7, y: 5.4, w: 4.0 },
+      { type: 'ramp', x: 130.7, y: 5.4, w: 7.5, rise: -3.2 },
+      { type: 'flat', x: 138.2, y: 2.2, w: 4.0 },
+      { type: 'bridge', x: 142.2, y: 2.2, w: 18.0, sag: 1.4 },
+      { type: 'flat', x: 160.2, y: 2.2, w: 9.8 },
+
+      // Sector 3: Ravine Skyway Ferry & Mountain Wall (x: 170 - 245)
+      { type: 'gap', x: 170.0, w: 14.0 },
+      { type: 'moving', x: 172.0, y: 2.2, w: 8.5, range: 2.2, speed: 1.5, phase: 0 },
+      { type: 'flat', x: 184.0, y: 2.2, w: 5.0 },
+      { type: 'ramp', x: 189.0, y: 2.2, w: 7.0, rise: 4.0 },
+      { type: 'flat', x: 196.0, y: 6.2, w: 3.5 },
+      { type: 'ramp', x: 199.5, y: 6.2, w: 7.0, rise: -4.0 },
+      { type: 'flat', x: 206.5, y: 2.2, w: 4.0 },
+      { type: 'bump', x: 210.5, y: 2.2, w: 3.5, h: 0.60 },
+      { type: 'flat', x: 214.0, y: 2.2, w: 3.0 },
+      { type: 'bump', x: 217.0, y: 2.2, w: 3.5, h: 0.65 },
+      { type: 'flat', x: 220.5, y: 2.2, w: 19.5 },
+
+      // Sector 4: 5-Tier Giant Staircase & Spinner Summit (x: 240 - 325)
+      { type: 'ramp', x: 240.0, y: 2.0, w: 2.5, rise: 1.1 },
+      { type: 'flat', x: 242.5, y: 3.1, w: 3.5 },
+      { type: 'ramp', x: 246.0, y: 3.1, w: 2.5, rise: 1.1 },
+      { type: 'flat', x: 248.5, y: 4.2, w: 3.5 },
+      { type: 'ramp', x: 252.0, y: 4.2, w: 2.5, rise: 1.1 },
+      { type: 'flat', x: 254.5, y: 5.3, w: 3.5 },
+      { type: 'ramp', x: 258.0, y: 5.3, w: 2.5, rise: 1.1 },
+      { type: 'flat', x: 260.5, y: 6.4, w: 3.5 },
+      { type: 'ramp', x: 264.0, y: 6.4, w: 2.5, rise: 1.1 },
+      { type: 'flat', x: 266.5, y: 7.5, w: 4.5 },
+      { type: 'bridge', x: 271.0, y: 7.5, w: 22.0, sag: 1.5 },
+      { type: 'flat', x: 293.0, y: 7.5, w: 4.0 },
+      { type: 'ramp', x: 297.0, y: 7.5, w: 8.5, rise: -5.3 },
+      { type: 'flat', x: 305.5, y: 2.2, w: 19.5 },
+
+      // Sector 5: Double Roller-Coaster Switchbacks (x: 325 - 405)
+      { type: 'ramp', x: 325.0, y: 2.2, w: 7.0, rise: 4.2 },
+      { type: 'flat', x: 332.0, y: 6.4, w: 3.5 },
+      { type: 'ramp', x: 335.5, y: 6.4, w: 7.0, rise: -3.8 },
+      { type: 'ramp', x: 342.5, y: 2.6, w: 6.5, rise: 3.6 },
+      { type: 'flat', x: 349.0, y: 6.2, w: 3.5 },
+      { type: 'ramp', x: 352.5, y: 6.2, w: 7.0, rise: -4.0 },
+      { type: 'flat', x: 359.5, y: 2.2, w: 4.0 },
+      { type: 'bump', x: 363.5, y: 2.2, w: 3.5, h: 0.58 },
+      { type: 'flat', x: 367.0, y: 2.2, w: 3.0 },
+      { type: 'gap', x: 370.0, w: 0.8 },
+      { type: 'see-saw', x: 370.8, y: 2.2, w: 10.0 },
+      { type: 'gap', x: 380.8, w: 0.8 },
+      { type: 'flat', x: 381.6, y: 2.2, w: 18.4 },
+
+      // Sector 6: Hydraulic Canopy Elevator (x: 400 - 475)
+      { type: 'gap', x: 400.0, w: 13.0 },
+      { type: 'moving', x: 400.8, y: 4.5, w: 11.5, range: 0, rangeY: 2.3, speed: 1.1, phase: -1.57 },
+      { type: 'flat', x: 413.0, y: 6.8, w: 6.0 },
+      { type: 'bridge', x: 419.0, y: 6.8, w: 20.0, sag: 1.6 },
+      { type: 'flat', x: 439.0, y: 6.8, w: 4.0 },
+      { type: 'ramp', x: 443.0, y: 6.8, w: 8.0, rise: -4.6 },
+      { type: 'flat', x: 451.0, y: 2.2, w: 19.0 },
+
+      // Sector 7: Turbo Boost & Grand Alpine Finish (x: 470 - 570)
+      { type: 'boost', x: 470.0, y: 2.2, w: 6.0, rise: 2.0, power: 34 },
+      { type: 'gap', x: 476.0, w: 5.0 },
+      { type: 'ramp', x: 481.0, y: 4.2, w: 6.5, rise: -1.0 },
+      { type: 'flat', x: 487.5, y: 3.2, w: 6.0 },
+      { type: 'bridge', x: 493.5, y: 3.2, w: 20.0, sag: 1.5 },
+      { type: 'flat', x: 513.5, y: 3.2, w: 4.0 },
+      { type: 'ramp', x: 517.5, y: 3.2, w: 6.0, rise: -1.2 },
+      { type: 'flat', x: 523.5, y: 2.0, w: 4.0 },
+      { type: 'ramp', x: 527.5, y: 2.0, w: 6.5, rise: 3.2 },
+      { type: 'flat', x: 534.0, y: 5.2, w: 3.0 },
+      { type: 'ramp', x: 537.0, y: 5.2, w: 6.5, rise: -3.2 },
+      { type: 'flat', x: 543.5, y: 2.0, w: 28.0 },
+    ],
+    obstacles: [
+      { type: 'spinner', x: 282.0, y: 7.8, r: 1.5, speed: 2.2 },
+      { type: 'spinner', x: 503.5, y: 6.2, r: 1.4, speed: 2.4 },
+    ]
+  },
+
+  // 24: Skyway Ferries & Steep Loops (Dual Ferries, Precision Nitro Leaps & Triple Hazards)
+  {
+    name: 'Level 24: Skyway Ferries & Steep Loops', theme: 'forest', spawnX: 1.5, spawnY: 3, finishX: 575,
+    segments: [
+      // Sector 1: Steep Mountain Opener (x: 0 - 85)
+      { type: 'flat', x: 0, y: 2, w: 7 },
+      { type: 'ramp', x: 7.0, y: 2.0, w: 6.5, rise: 3.6 },
+      { type: 'flat', x: 13.5, y: 5.6, w: 3.5 },
+      { type: 'ramp', x: 17.0, y: 5.6, w: 6.5, rise: -3.6 },
+      { type: 'flat', x: 23.5, y: 2.0, w: 3.0 },
+      { type: 'bump', x: 26.5, y: 2.0, w: 3.5, h: 0.62 },
+      { type: 'flat', x: 30.0, y: 2.0, w: 3.0 },
+      { type: 'bump', x: 33.0, y: 2.0, w: 3.5, h: 0.68 },
+      { type: 'flat', x: 36.5, y: 2.0, w: 4.0 },
+      { type: 'bridge', x: 40.5, y: 2.0, w: 18.0, sag: 1.4 },
+      { type: 'flat', x: 58.5, y: 2.0, w: 4.0 },
+      { type: 'ramp', x: 62.5, y: 2.0, w: 6.0, rise: 2.4 },
+      { type: 'flat', x: 68.5, y: 4.4, w: 4.0 },
+      { type: 'ramp', x: 72.5, y: 4.4, w: 6.0, rise: -1.2 },
+      { type: 'flat', x: 78.5, y: 3.2, w: 6.5 },
+
+      // Sector 2: Skyway Ferry #1 across Abyss (x: 85 - 165)
+      { type: 'gap', x: 85.0, w: 15.0 },
+      { type: 'moving', x: 87.2, y: 3.2, w: 8.5, range: 2.5, speed: 1.5, phase: 0 },
+      { type: 'flat', x: 100.0, y: 3.2, w: 6.0 },
+      { type: 'bump', x: 106.0, y: 3.2, w: 3.5, h: 0.60 },
+      { type: 'flat', x: 109.5, y: 3.2, w: 4.5 },
+      { type: 'ramp', x: 114.0, y: 3.2, w: 7.0, rise: 3.8 },
+      { type: 'flat', x: 121.0, y: 7.0, w: 3.5 },
+      { type: 'ramp', x: 124.5, y: 7.0, w: 7.0, rise: -4.8 },
+      { type: 'flat', x: 131.5, y: 2.2, w: 5.0 },
+      { type: 'bridge', x: 136.5, y: 2.2, w: 20.0, sag: 1.6 },
+      { type: 'flat', x: 156.5, y: 2.2, w: 8.5 },
+
+      // Sector 3: Precision Turbo Jump #1 (x: 165 - 245)
+      { type: 'boost', x: 165.0, y: 2.2, w: 6.0, rise: 2.0, power: 34 },
+      { type: 'gap', x: 171.0, w: 5.0 },
+      { type: 'ramp', x: 176.0, y: 4.2, w: 6.5, rise: -1.0 },
+      { type: 'flat', x: 182.5, y: 3.2, w: 6.0 },
+      { type: 'bridge', x: 188.5, y: 3.2, w: 22.0, sag: 1.8 },
+      { type: 'flat', x: 210.5, y: 3.2, w: 4.0 },
+      { type: 'ramp', x: 214.5, y: 3.2, w: 6.5, rise: -1.0 },
+      { type: 'flat', x: 221.0, y: 2.2, w: 24.0 },
+
+      // Sector 4: Sawmill Dual Spinners Corridor (x: 245 - 325)
+      { type: 'bump', x: 245.0, y: 2.2, w: 3.5, h: 0.55 },
+      { type: 'flat', x: 248.5, y: 2.2, w: 3.0 },
+      { type: 'flat', x: 251.5, y: 2.2, w: 18.0 },
+      { type: 'bump', x: 269.5, y: 2.2, w: 3.5, h: 0.58 },
+      { type: 'flat', x: 273.0, y: 2.2, w: 3.0 },
+      { type: 'flat', x: 276.0, y: 2.2, w: 18.0 },
+      { type: 'ramp', x: 294.0, y: 2.2, w: 7.0, rise: 3.6 },
+      { type: 'flat', x: 301.0, y: 5.8, w: 3.5 },
+      { type: 'ramp', x: 304.5, y: 5.8, w: 7.0, rise: -3.6 },
+      { type: 'flat', x: 311.5, y: 2.2, w: 13.5 },
+
+      // Sector 5: Skyway Ferry #2 & Mountain Lift (x: 325 - 410)
+      { type: 'gap', x: 325.0, w: 15.0 },
+      { type: 'moving', x: 327.2, y: 2.2, w: 8.5, range: 2.5, speed: 1.6, phase: 3.14 },
+      { type: 'flat', x: 340.0, y: 2.2, w: 6.0 },
+      { type: 'gap', x: 346.0, w: 13.0 },
+      { type: 'moving', x: 346.8, y: 4.4, w: 11.5, range: 0, rangeY: 2.2, speed: 1.1, phase: -1.57 },
+      { type: 'flat', x: 359.0, y: 6.6, w: 6.0 },
+      { type: 'bridge', x: 365.0, y: 6.6, w: 20.0, sag: 1.5 },
+      { type: 'flat', x: 385.0, y: 6.6, w: 4.0 },
+      { type: 'ramp', x: 389.0, y: 6.6, w: 8.0, rise: -4.4 },
+      { type: 'flat', x: 397.0, y: 2.2, w: 13.0 },
+
+      // Sector 6: Steep Double Switchback Mountain & See-Saw (x: 410 - 495)
+      { type: 'ramp', x: 410.0, y: 2.2, w: 7.0, rise: 4.4 },
+      { type: 'flat', x: 417.0, y: 6.6, w: 3.5 },
+      { type: 'gap', x: 420.5, w: 0.8 },
+      { type: 'see-saw', x: 421.3, y: 6.6, w: 9.5 },
+      { type: 'gap', x: 430.8, w: 0.8 },
+      { type: 'flat', x: 431.6, y: 6.6, w: 3.5 },
+      { type: 'ramp', x: 435.1, y: 6.6, w: 7.5, rise: -4.4 },
+      { type: 'flat', x: 442.6, y: 2.2, w: 4.0 },
+      { type: 'bump', x: 446.6, y: 2.2, w: 3.5, h: 0.60 },
+      { type: 'flat', x: 450.1, y: 2.2, w: 3.0 },
+      { type: 'ramp', x: 453.1, y: 2.2, w: 6.5, rise: 3.8 },
+      { type: 'flat', x: 459.6, y: 6.0, w: 3.5 },
+      { type: 'ramp', x: 463.1, y: 6.0, w: 7.0, rise: -3.8 },
+      { type: 'flat', x: 470.1, y: 2.2, w: 24.9 },
+
+      // Sector 7: Turbo Boost Jump #2 & Alpine Finish (x: 495 - 575)
+      { type: 'boost', x: 495.0, y: 2.2, w: 6.0, rise: 2.0, power: 34 },
+      { type: 'gap', x: 501.0, w: 5.0 },
+      { type: 'ramp', x: 506.0, y: 4.2, w: 6.5, rise: -1.0 },
+      { type: 'flat', x: 512.5, y: 3.2, w: 6.0 },
+      { type: 'bridge', x: 518.5, y: 3.2, w: 22.0, sag: 1.5 },
+      { type: 'flat', x: 540.5, y: 3.2, w: 4.0 },
+      { type: 'ramp', x: 544.5, y: 3.2, w: 6.0, rise: -1.2 },
+      { type: 'flat', x: 550.5, y: 2.0, w: 26.5 },
+    ],
+    obstacles: [
+      { type: 'spinner', x: 260.0, y: 6.1, r: 1.5, speed: 2.2 },
+      { type: 'spinner', x: 285.0, y: 6.1, r: 1.5, speed: -2.2 },
+      { type: 'spinner', x: 529.5, y: 6.2, r: 1.4, speed: 2.4 },
+    ]
+  },
+
+  // 25: Sawmill Colossus (Quad Spinners, Extreme Switchbacks, Ferry & Spring Leap)
+  {
+    name: 'Level 25: Sawmill Colossus', theme: 'forest', spawnX: 1.5, spawnY: 3, finishX: 580,
+    segments: [
+      // Sector 1: Severe Washboard into 4-Tier Steps (x: 0 - 85)
+      { type: 'flat', x: 0, y: 2, w: 7 },
+      { type: 'bump', x: 7, y: 2, w: 3.5, h: 0.65 },
+      { type: 'flat', x: 10.5, y: 2, w: 2.5 },
+      { type: 'bump', x: 13, y: 2, w: 3.5, h: 0.72 },
+      { type: 'flat', x: 16.5, y: 2, w: 3.5 },
+      { type: 'ramp', x: 20.0, y: 2.0, w: 2.5, rise: 1.2 },
+      { type: 'flat', x: 22.5, y: 3.2, w: 3.5 },
+      { type: 'ramp', x: 26.0, y: 3.2, w: 2.5, rise: 1.2 },
+      { type: 'flat', x: 28.5, y: 4.4, w: 3.5 },
+      { type: 'ramp', x: 32.0, y: 4.4, w: 2.5, rise: 1.2 },
+      { type: 'flat', x: 34.5, y: 5.6, w: 3.5 },
+      { type: 'ramp', x: 38.0, y: 5.6, w: 2.5, rise: 1.2 },
+      { type: 'flat', x: 40.5, y: 6.8, w: 4.5 },
+      { type: 'ramp', x: 45.0, y: 6.8, w: 8.0, rise: -4.6 },
+      { type: 'flat', x: 53.0, y: 2.2, w: 4.0 },
+      { type: 'bump', x: 57.0, y: 2.2, w: 3.5, h: 0.60 },
+      { type: 'flat', x: 60.5, y: 2.2, w: 3.0 },
+      { type: 'ramp', x: 63.5, y: 2.2, w: 6.5, rise: 2.8 },
+      { type: 'flat', x: 70.0, y: 5.0, w: 4.0 },
+      { type: 'ramp', x: 74.0, y: 5.0, w: 6.5, rise: -2.8 },
+      { type: 'flat', x: 80.5, y: 2.2, w: 14.5 },
+
+      // Sector 2: Sawmill Chamber 1 Dual Spinners (x: 95 - 170)
+      { type: 'bump', x: 95.0, y: 2.2, w: 3.5, h: 0.55 },
+      { type: 'flat', x: 98.5, y: 2.2, w: 3.0 },
+      { type: 'flat', x: 101.5, y: 2.2, w: 18.0 },
+      { type: 'bump', x: 119.5, y: 2.2, w: 3.5, h: 0.58 },
+      { type: 'flat', x: 123.0, y: 2.2, w: 3.0 },
+      { type: 'flat', x: 126.0, y: 2.2, w: 18.0 },
+      { type: 'ramp', x: 144.0, y: 2.2, w: 7.0, rise: 3.6 },
+      { type: 'flat', x: 151.0, y: 5.8, w: 3.5 },
+      { type: 'ramp', x: 154.5, y: 5.8, w: 7.0, rise: -3.6 },
+      { type: 'flat', x: 161.5, y: 2.2, w: 13.5 },
+
+      // Sector 3: Hydraulic Colossus Elevator & Canopy (x: 175 - 255)
+      { type: 'gap', x: 175.0, w: 13.0 },
+      { type: 'moving', x: 175.8, y: 4.75, w: 11.5, range: 0, rangeY: 2.5, speed: 1.1, phase: -1.57 },
+      { type: 'flat', x: 188.0, y: 7.25, w: 6.0 },
+      { type: 'bridge', x: 194.0, y: 7.25, w: 22.0, sag: 2.0 },
+      { type: 'flat', x: 216.0, y: 7.25, w: 4.0 },
+      { type: 'ramp', x: 220.0, y: 7.25, w: 8.5, rise: -5.05 },
+      { type: 'flat', x: 228.5, y: 2.2, w: 21.5 },
+
+      // Sector 4: Extreme Steep Ridge & Tandem See-Saws (x: 250 - 335)
+      { type: 'ramp', x: 250.0, y: 2.2, w: 7.0, rise: 4.5 },
+      { type: 'flat', x: 257.0, y: 6.7, w: 3.5 },
+      { type: 'ramp', x: 260.5, y: 6.7, w: 7.0, rise: -4.5 },
+      { type: 'flat', x: 267.5, y: 2.2, w: 4.0 },
+      { type: 'gap', x: 271.5, w: 0.8 },
+      { type: 'see-saw', x: 272.3, y: 2.2, w: 10.0 },
+      { type: 'gap', x: 282.3, w: 0.8 },
+      { type: 'flat', x: 283.1, y: 2.2, w: 3.5 },
+      { type: 'gap', x: 286.6, w: 0.8 },
+      { type: 'see-saw', x: 287.4, y: 2.2, w: 10.0 },
+      { type: 'gap', x: 297.4, w: 0.8 },
+      { type: 'flat', x: 298.2, y: 2.2, w: 4.0 },
+      { type: 'ramp', x: 302.2, y: 2.2, w: 6.5, rise: 3.2 },
+      { type: 'flat', x: 308.7, y: 5.4, w: 3.5 },
+      { type: 'ramp', x: 312.2, y: 5.4, w: 7.0, rise: -3.2 },
+      { type: 'flat', x: 319.2, y: 2.2, w: 20.8 },
+
+      // Sector 5: Sawmill Chamber 2 High-Speed Spinners (x: 340 - 415)
+      { type: 'flat', x: 340.0, y: 2.2, w: 18.0 },
+      { type: 'bump', x: 358.0, y: 2.2, w: 3.5, h: 0.60 },
+      { type: 'flat', x: 361.5, y: 2.2, w: 3.0 },
+      { type: 'flat', x: 364.5, y: 2.2, w: 18.0 },
+      { type: 'ramp', x: 382.5, y: 2.2, w: 6.5, rise: 2.8 },
+      { type: 'flat', x: 389.0, y: 5.0, w: 4.0 },
+      { type: 'ramp', x: 393.0, y: 5.0, w: 6.5, rise: -2.8 },
+      { type: 'flat', x: 399.5, y: 2.2, w: 15.5 },
+
+      // Sector 6: Skyway Ferry & Precision Spring Bounce (x: 415 - 495)
+      { type: 'gap', x: 415.0, w: 15.0 },
+      { type: 'moving', x: 417.2, y: 2.2, w: 8.5, range: 2.6, speed: 1.5, phase: 0 },
+      { type: 'flat', x: 430.0, y: 2.2, w: 6.0 },
+      { type: 'bump', x: 436.0, y: 2.2, w: 3.5, h: 0.58 },
+      { type: 'flat', x: 439.5, y: 2.2, w: 3.0 },
+      { type: 'bounce', x: 442.5, y: 2.2, w: 4.0, power: 15 },
+      { type: 'gap', x: 446.5, w: 1.2 },
+      { type: 'flat', x: 447.7, y: 3.8, w: 10.0 },
+      { type: 'ramp', x: 457.7, y: 3.8, w: 7.3, rise: -1.6 },
+      { type: 'flat', x: 465.0, y: 2.2, w: 6.0 },
+      { type: 'bridge', x: 471.0, y: 2.2, w: 18.0, sag: 1.4 },
+      { type: 'flat', x: 489.0, y: 2.2, w: 11.0 },
+
+      // Sector 7: Grand Roller-Coaster Switchbacks & Victory Dash (x: 500 - 580)
+      { type: 'ramp', x: 500.0, y: 2.2, w: 7.0, rise: 4.2 },
+      { type: 'flat', x: 507.0, y: 6.4, w: 3.5 },
+      { type: 'ramp', x: 510.5, y: 6.4, w: 7.0, rise: -4.2 },
+      { type: 'ramp', x: 517.5, y: 2.2, w: 6.5, rise: 3.6 },
+      { type: 'flat', x: 524.0, y: 5.8, w: 3.5 },
+      { type: 'ramp', x: 527.5, y: 5.8, w: 7.0, rise: -3.6 },
+      { type: 'flat', x: 534.5, y: 2.2, w: 4.0 },
+      { type: 'boost', x: 538.5, y: 2.2, w: 8.0, rise: 0, power: 34 },
+      { type: 'flat', x: 546.5, y: 2.2, w: 35.5 },
+    ],
+    obstacles: [
+      { type: 'spinner', x: 110.0, y: 6.1, r: 1.5, speed: 2.0 },
+      { type: 'spinner', x: 135.0, y: 6.1, r: 1.5, speed: -2.0 },
+      { type: 'spinner', x: 350.0, y: 6.1, r: 1.5, speed: 2.4 },
+      { type: 'spinner', x: 375.0, y: 6.1, r: 1.5, speed: -2.4 },
     ]
   },
 
