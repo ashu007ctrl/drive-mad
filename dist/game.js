@@ -632,6 +632,7 @@ class DriveMadGame {
   _updateOrientationButtons() {
     const isLandscape = window.innerWidth > window.innerHeight;
     const isMobile = window.innerWidth < 920 || window.innerHeight < 500;
+    document.body.classList.toggle('is-mobile-landscape', isLandscape && isMobile);
 
     // Update Menu screen orientation button
     const menuBtn = document.getElementById('btn-landscape-menu');
