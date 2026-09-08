@@ -1174,7 +1174,7 @@ const LEVELS = [
       { type: 'flat', x: 543.5, y: 2.0, w: 28.0 },
     ],
     obstacles: [
-      { type: 'spinner', x: 282.0, y: 7.8, r: 1.5, speed: 2.2 },
+      { type: 'spinner', x: 282.0, y: 9.8, r: 1.5, speed: 2.2 },
       { type: 'spinner', x: 503.5, y: 6.2, r: 1.4, speed: 2.4 },
     ]
   },
@@ -1362,7 +1362,7 @@ const LEVELS = [
       { type: 'flat', x: 430.0, y: 2.2, w: 6.0 },
       { type: 'bump', x: 436.0, y: 2.2, w: 3.5, h: 0.58 },
       { type: 'flat', x: 439.5, y: 2.2, w: 3.0 },
-      { type: 'bounce', x: 442.5, y: 2.2, w: 4.0, power: 15 },
+      { type: 'bounce', x: 442.5, y: 2.2, w: 3.0, power: 15 },
       { type: 'gap', x: 446.5, w: 1.2 },
       { type: 'flat', x: 447.7, y: 3.8, w: 10.0 },
       { type: 'ramp', x: 457.7, y: 3.8, w: 7.3, rise: -1.6 },
