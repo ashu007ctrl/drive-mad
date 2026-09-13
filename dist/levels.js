@@ -1984,8 +1984,8 @@ const LEVELS = [
       { type: 'spinner', x: 228, y: 6.1, r: 1.5, speed: -2.7 },
       { type: 'spinner', x: 248, y: 6.1, r: 1.5, speed: 2.9 },
       { type: 'spinner', x: 268, y: 6.1, r: 1.5, speed: -2.7 },
-      { type: 'spinner', x: 360, y: 5.7, r: 1.3, speed: 2.5 },
-      { type: 'spinner', x: 491, y: 5.8, r: 1.3, speed: -2.6 },
+      { type: 'spinner', x: 360, y: 10.5, r: 1.3, speed: 2.5 },
+      { type: 'spinner', x: 491, y: 9.8, r: 1.3, speed: -2.6 },
       { type: 'spinner', x: 573, y: 5.7, r: 1.3, speed: 2.7 },
     ]
   },
