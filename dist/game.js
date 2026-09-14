@@ -1032,19 +1032,21 @@ class DriveMadGame {
     ctx.restore();
 
     // 12. Speed Lines FX when speeding fast
-    if (this.physics && this.physics.car && this.physics.car.vel.len() > 11.5) {
+    if (this.physics && this.physics.car && this.physics.car.vel.len() > 14) {
       this._drawSpeedLines(ctx, W, H, this.physics.car.vel.len());
     }
   }
 
   _drawSpeedLines(ctx, W, H, speed) {
-    const numLines = Math.min(18, Math.round(speed * 0.8));
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
-    ctx.lineWidth = 2;
+    const numLines = Math.min(14, Math.round(speed * 0.6));
+    const t = performance.now() * 0.5;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1.5;
     for (let i = 0; i < numLines; i++) {
-      const y = (i * (H / numLines) + performance.now() * 0.5) % H;
-      const len = 80 + (i % 5) * 30;
-      const x = (i % 2 === 0) ? W - len - Math.random() * 40 : Math.random() * 40;
+      const y = (i * (H / numLines) + t) % H;
+      const len = 60 + (i % 5) * 25;
+      // Use stable x based on i only — no Math.random() to avoid flicker
+      const x = (i % 2 === 0) ? W * 0.72 + (i * 17) % (W * 0.2) : W * 0.04 + (i * 13) % (W * 0.12);
       ctx.beginPath();
       ctx.moveTo(x, y);
       ctx.lineTo(x + len, y);

@@ -1814,6 +1814,7 @@ const LEVELS = [
       { type: 'ramp', x: 454.5, y: 5.6, w: 6, rise: -3.4 },
       { type: 'flat', x: 460.5, y: 2.2, w: 29.5 },
 
+
       // Sector 6: Dual skyway ferries + bounce spring (x: 490 - 580)
       { type: 'gap', x: 490, w: 14 },
       { type: 'moving', x: 492, y: 2.2, w: 8.5, range: 2.6, speed: 1.55, phase: 0 },
@@ -1846,6 +1847,7 @@ const LEVELS = [
       { type: 'flat', x: 653, y: 2.2, w: 4 },
       { type: 'boost', x: 657, y: 2.2, w: 7, rise: 0, power: 36 },
       { type: 'flat', x: 664, y: 2.2, w: 31 },
+
     ],
     obstacles: [
       { type: 'spinner', x: 118, y: 6.1, r: 1.5, speed: 2.5 },
@@ -1859,7 +1861,7 @@ const LEVELS = [
 
   // 30: The Forest Titan Colossus — 8 sectors, canyon bridge opener, see-saw + ferry + escalator combos, 7 spinners
   {
-    name: 'Level 30: The Forest Titan Colossus', theme: 'forest', spawnX: 1.5, spawnY: 3, finishX: 710,
+    name: 'Level 30: The Forest Titan Colossus', theme: 'forest', spawnX: 1.5, spawnY: 3, finishX: 760,
     segments: [
       // Sector 1: The Titan Gate — canyon bridge + mogul sequence (x: 0 - 100)
       { type: 'flat', x: 0, y: 2, w: 8 },
@@ -1966,18 +1968,19 @@ const LEVELS = [
       { type: 'gap', x: 648.3, w: 0.8 },
       { type: 'flat', x: 649.1, y: 2.2, w: 30.9 },
 
-      // Sector 8: Grand roller-coaster finale + hypersonic boost (x: 680 - 750)
+      // Sector 8: Grand roller-coaster finale + hypersonic boost (x: 680 - 775)
       { type: 'boost', x: 680, y: 2.2, w: 7, rise: 0, power: 34 },
       { type: 'flat', x: 687, y: 2.2, w: 3 },
       { type: 'ramp', x: 690, y: 2.2, w: 6.5, rise: 5.0 },
       { type: 'flat', x: 696.5, y: 7.2, w: 3.5 },
       { type: 'ramp', x: 700, y: 7.2, w: 6.5, rise: -5.0 },
-      { type: 'ramp', x: 706.5, y: 2.2, w: 6.5, rise: 4.4 },
-      { type: 'flat', x: 713, y: 6.6, w: 3.5 },
-      { type: 'ramp', x: 716.5, y: 6.6, w: 6.5, rise: -4.4 },
-      { type: 'flat', x: 723, y: 2.2, w: 4 },
-      { type: 'boost', x: 727, y: 2.2, w: 7, rise: 0, power: 38 },
-      { type: 'flat', x: 734, y: 2.2, w: 16 },
+      { type: 'flat', x: 706.5, y: 2.2, w: 4 },
+      { type: 'ramp', x: 710.5, y: 2.2, w: 6.5, rise: 3.4 },
+      { type: 'flat', x: 717, y: 5.6, w: 3.5 },
+      { type: 'ramp', x: 720.5, y: 5.6, w: 6.5, rise: -3.4 },
+      { type: 'flat', x: 727, y: 2.2, w: 4 },
+      { type: 'boost', x: 731, y: 2.2, w: 7, rise: 0, power: 38 },
+      { type: 'flat', x: 738, y: 2.2, w: 32 },
     ],
     obstacles: [
       { type: 'spinner', x: 208, y: 6.1, r: 1.5, speed: 2.5 },
@@ -1986,8 +1989,9 @@ const LEVELS = [
       { type: 'spinner', x: 268, y: 6.1, r: 1.5, speed: -2.7 },
       { type: 'spinner', x: 360, y: 10.5, r: 1.3, speed: 2.5 },
       { type: 'spinner', x: 491, y: 9.8, r: 1.3, speed: -2.6 },
-      { type: 'spinner', x: 573, y: 5.7, r: 1.3, speed: 2.7 },
+      { type: 'spinner', x: 573, y: 9.7, r: 1.3, speed: 2.7 },
     ]
+
   },
 
   // ══ WORLD 4: Night (31-40) — Steep terrain, spinners ════════════════════════
